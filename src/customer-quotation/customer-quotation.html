@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMAR Renewable Energy - Customer Quotation</title>
+
+<style>
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: #e9edf2;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #263238;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body {
+        padding: 20px 0;
+    }
+
+    .page {
+        width: 210mm;
+        min-height: 297mm;
+        height: 297mm;
+        margin: 0 auto 20px;
+        background: #fff;
+        position: relative;
+        padding: 14mm 14mm 20mm;
+        overflow: hidden;
+        page-break-after: always;
+    }
+
+    .page:last-child {
+        page-break-after: auto;
+    }
+
+    /* ---------- BRAND ---------- */
+
+    .logo-wrap {
+        text-align: center;
+        margin-bottom: 7mm;
+    }
+
+    .logo {
+        width: 75mm;
+        max-height: 48mm;
+        object-fit: contain;
+    }
+
+    .brand-banner {
+        background: #102e59;
+        color: #fff;
+        text-align: center;
+        padding: 6mm 5mm 5mm;
+        margin-bottom: 6mm;
+    }
+
+    .brand-banner .title {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: .2px;
+    }
+
+    .brand-banner .subtitle {
+        font-size: 10px;
+        margin-top: 2px;
+        color: #dfe8f2;
+    }
+
+    .green-banner {
+        background: #83b83c;
+        color: #fff;
+        text-align: center;
+        padding: 4mm 4mm;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 9mm;
+    }
+
+    .top-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 1px solid #83b83c;
+        padding-bottom: 4mm;
+        margin-bottom: 6mm;
+    }
+
+    .small-logo {
+        width: 43mm;
+        max-height: 22mm;
+        object-fit: contain;
+    }
+
+    .header-right {
+        text-align: right;
+        font-size: 9px;
+        color: #102e59;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+    .header-right span {
+        display: block;
+        font-weight: 400;
+        color: #68737d;
+    }
+
+    /* ---------- HEADINGS ---------- */
+
+    .section-title {
+        color: #102e59;
+        font-size: 15px;
+        font-weight: 700;
+        border-bottom: 3px solid #83b83c;
+        padding-bottom: 2mm;
+        margin: 0 0 5mm;
+        text-transform: uppercase;
+    }
+
+    .subheading {
+        color: #102e59;
+        font-size: 12px;
+        font-weight: 700;
+        margin: 5mm 0 3mm;
+    }
+
+    p {
+        font-size: 10.5px;
+        line-height: 1.55;
+        margin: 0 0 3mm;
+        text-align: justify;
+    }
+
+    /* ---------- TABLES ---------- */
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9.5px;
+    }
+
+    th {
+        background: #102e59;
+        color: #fff;
+        font-weight: 700;
+        padding: 3.2mm 2.5mm;
+        border: 1px solid #d5dce3;
+        text-align: center;
+    }
+
+    td {
+        border: 1px solid #d5dce3;
+        padding: 3mm 3mm;
+        vertical-align: middle;
+    }
+
+    .label-cell {
+        width: 40%;
+        background: #e8edf3;
+        color: #17365d;
+        font-weight: 700;
+    }
+
+    .alt {
+        background: #f1f4f7;
+    }
+
+    .green-row td {
+        background: #83b83c;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .soft-green td {
+        background: #eef6e4;
+    }
+
+    .soft-blue td {
+        background: #e8edf3;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    .right {
+        text-align: right;
+    }
+
+    /* ---------- PAGE 1 ---------- */
+
+    .validity {
+        text-align: center;
+        font-size: 9px;
+        color: #6b7278;
+        font-style: italic;
+        margin: 4mm 0 6mm;
+    }
+
+    .benefits {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid #d5dce3;
+    }
+
+    .benefit {
+        padding: 4mm;
+        border-right: 1px solid #d5dce3;
+        border-bottom: 1px solid #d5dce3;
+        min-height: 27mm;
+    }
+
+    .benefit:nth-child(2n) {
+        border-right: 0;
+    }
+
+    .benefit:last-child {
+        grid-column: 1 / -1;
+        border-right: 0;
+    }
+
+    .benefit-title {
+        color: #6d9f31;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 2mm;
+    }
+
+    .benefit-title::before {
+        content: "✓ ";
+        color: #102e59;
+        font-size: 14px;
+    }
+
+    .benefit-text {
+        font-size: 9px;
+        line-height: 1.35;
+    }
+
+    /* ---------- PAGE 2 ---------- */
+
+    .why-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid #d5dce3;
+        margin-top: 5mm;
+    }
+
+    .why-card {
+        padding: 4mm;
+        min-height: 30mm;
+        border-right: 1px solid #d5dce3;
+        border-bottom: 1px solid #d5dce3;
+    }
+
+    .why-card:nth-child(2n) {
+        border-right: 0;
+    }
+
+    .why-card:nth-last-child(-n+2) {
+        border-bottom: 0;
+    }
+
+    .why-card:nth-child(odd) {
+        background: #eef6e4;
+    }
+
+    .why-card:nth-child(even) {
+        background: #e8edf3;
+    }
+
+    .why-title {
+        color: #17365d;
+        font-size: 10.5px;
+        font-weight: 700;
+        margin-bottom: 2mm;
+    }
+
+    .why-card:nth-child(odd) .why-title {
+        color: #6d9f31;
+    }
+
+    .why-text {
+        font-size: 9px;
+        line-height: 1.4;
+    }
+
+    /* ---------- PAGE 3 ---------- */
+
+    .service-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 7mm;
+    }
+
+    .service-list li {
+        font-size: 10px;
+        line-height: 1.55;
+        margin-bottom: 1.5mm;
+        padding-left: 5mm;
+        position: relative;
+    }
+
+    .service-list li::before {
+        content: "●";
+        color: #83b83c;
+        position: absolute;
+        left: 0;
+        font-size: 9px;
+    }
+
+    .price-table td:first-child {
+        width: 47%;
+    }
+
+    .price-table .highlight td {
+        background: #83b83c;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .payment-table td,
+    .payment-table th {
+        font-size: 9px;
+        padding: 3mm 2.5mm;
+    }
+
+    /* ---------- PAGE 4 ---------- */
+
+    .bom td:first-child {
+        font-weight: 700;
+        color: #17365d;
+    }
+
+    .terms {
+        margin-top: 7mm;
+    }
+
+    .term {
+        font-size: 9.4px;
+        line-height: 1.45;
+        margin-bottom: 3mm;
+        text-align: justify;
+    }
+
+    .term strong {
+        color: #17365d;
+    }
+
+    /* ---------- PAGE 5 ---------- */
+
+    .acceptance-table {
+        margin-top: 5mm;
+    }
+
+    .signature-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15mm;
+        margin-top: 17mm;
+    }
+
+    .signature {
+        border-top: 1px solid #17365d;
+        padding-top: 2mm;
+        font-size: 9px;
+        color: #606970;
+    }
+
+    /* ---------- FOOTER ---------- */
+
+    .footer {
+        position: absolute;
+        left: 14mm;
+        right: 14mm;
+        bottom: 7mm;
+        background: #102e59;
+        color: #fff;
+        min-height: 10mm;
+        padding: 3mm 5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 8px;
+    }
+
+    .footer strong {
+        font-size: 8px;
+    }
+
+    .footer .page-no {
+        font-size: 8px;
+    }
+
+    .final-footer {
+        margin-top: 17mm;
+        background: #102e59;
+        color: #fff;
+        text-align: center;
+        padding: 7mm 5mm;
+    }
+
+    .final-footer .company {
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .final-footer .tagline {
+        color: #83b83c;
+        font-size: 9px;
+        font-weight: 700;
+        margin: 2mm 0 3mm;
+    }
+
+    .final-footer .contact {
+        font-size: 8.5px;
+    }
+
+    /* ---------- PRINT ---------- */
+
+    @media print {
+        html, body {
+            background: #fff;
+        }
+
+        body {
+            padding: 0;
+        }
+
+        .page {
+            margin: 0;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<!-- ============================================================
+     PAGE 1 — COVER / CUSTOMER DETAILS
+============================================================ -->
+<section class="page">
+
+    <div class="logo-wrap">
+        <img class="logo" src="assets/lmar-logo.png" alt="LMAR Renewable Energy">
+    </div>
+
+    <div class="brand-banner">
+        <div class="title">ENERGY THAT NEVER SETS</div>
+        <div class="subtitle">Solar · Wind · Hybrid Energy Solutions</div>
+    </div>
+
+    <div class="green-banner">
+        ROOFTOP SOLAR SYSTEM — COMMERCIAL PROPOSAL &amp; QUOTATION
+    </div>
+
+    <h2 class="section-title">CUSTOMER DETAILS</h2>
+
+    <table>
+        <tr>
+            <td class="label-cell">Customer Name</td>
+            <td>{{CUSTOMER_NAME}}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Customer Mobile Number</td>
+            <td>{{CUSTOMER_MOBILE}}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Quotation ID</td>
+            <td>{{QUOTATION_ID}}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Project Size (kW)</td>
+            <td>{{SYSTEM_SIZE}} kW</td>
+        </tr>
+        <tr>
+            <td class="label-cell">DISCOM</td>
+            <td>{{DISCOM}}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Date</td>
+            <td>{{DATE}}</td>
+        </tr>
+    </table>
+
+    <div class="validity">
+        Prepared exclusively for the above customer &nbsp; | &nbsp;
+        Valid for 15 days from the date of issue
+    </div>
+
+    <div class="benefits">
+        <div class="benefit">
+            <div class="benefit-title">Certified EPC Partner</div>
+            <div class="benefit-text">
+                Professionally managed engineering, procurement &amp; construction team.
+            </div>
+        </div>
+
+        <div class="benefit">
+            <div class="benefit-title">MNRE Compliant Components</div>
+            <div class="benefit-text">
+                Every component sourced meets Ministry of New &amp; Renewable Energy norms.
+            </div>
+        </div>
+
+        <div class="benefit">
+            <div class="benefit-title">Pan-India Installations</div>
+            <div class="benefit-text">
+                Rooftop solar systems delivered and commissioned across India with local service support.
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <strong>LMAR RENEWABLE ENERGY — ENERGY THAT NEVER SETS</strong>
+        <span class="page-no">Page 1</span>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     PAGE 2 — ABOUT / WHY CHOOSE LMAR
+============================================================ -->
+<section class="page">
+
+    <div class="top-header">
+        <img class="small-logo" src="assets/lmar-logo.png" alt="LMAR Renewable Energy">
+
+        <div class="header-right">
+            COMMERCIAL PROPOSAL &amp; QUOTATION
+            <span>Quotation ID: {{QUOTATION_ID}}</span>
+        </div>
+    </div>
+
+    <h2 class="section-title">ABOUT LMAR RENEWABLE ENERGY</h2>
+
+    <p>
+        LMAR Renewable Energy is a rooftop solar and clean-energy EPC company committed to
+        delivering reliable, high-performance solar power systems for homes, businesses,
+        and institutions across India. From site assessment and system design to installation,
+        grid connection, and after-sales service, our team manages every step so you can switch
+        to clean energy with complete peace of mind.
+    </p>
+
+    <h2 class="section-title" style="margin-top: 8mm;">WHY CHOOSE LMAR</h2>
+
+    <div class="why-grid">
+        <div class="why-card">
+            <div class="why-title">Trusted Technology</div>
+            <div class="why-text">
+                Premium, MNRE-compliant components engineered for maximum power generation
+                and long-term reliability.
+            </div>
+        </div>
+
+        <div class="why-card">
+            <div class="why-title">Super Solid Structure</div>
+            <div class="why-text">
+                Hot-dip galvanised mounting structures lab-tested to withstand winds up to 150 km/h.
+            </div>
+        </div>
+
+        <div class="why-card">
+            <div class="why-title">Stress-Free Process</div>
+            <div class="why-text">
+                We manage subsidy application, DISCOM liaison, net-metering, design,
+                and installation end-to-end.
+            </div>
+        </div>
+
+        <div class="why-card">
+            <div class="why-title">Best-in-Class Service</div>
+            <div class="why-text">
+                Dedicated on-call support with free site visits and scheduled maintenance follow-ups.
+            </div>
+        </div>
+
+        <div class="why-card">
+            <div class="why-title">Safety &amp; Security</div>
+            <div class="why-text">
+                Extended component warranty plus complimentary plant insurance for total protection.
+            </div>
+        </div>
+
+        <div class="why-card">
+            <div class="why-title">Fast Execution</div>
+            <div class="why-text">
+                Streamlined project management for one of the quickest turnaround times in the industry.
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <strong>LMAR RENEWABLE ENERGY — ENERGY THAT NEVER SETS</strong>
+        <span class="page-no">Page 2</span>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     PAGE 3 — SERVICES / PRICING / PAYMENT
+============================================================ -->
+<section class="page">
+
+    <div class="top-header">
+        <img class="small-logo" src="assets/lmar-logo.png" alt="LMAR Renewable Energy">
+
+        <div class="header-right">
+            COMMERCIAL PROPOSAL &amp; QUOTATION
+            <span>Quotation ID: {{QUOTATION_ID}}</span>
+        </div>
+    </div>
+
+    <h2 class="section-title">OUR SERVICES</h2>
+
+    <ul class="service-list">
+        <li>Rooftop Solar PV System — Design, Supply, Installation &amp; Commissioning</li>
+        <li>Wind &amp; Hybrid Energy Solutions for Commercial and Industrial Sites</li>
+        <li>PM Surya Ghar Muft Bijli Yojana — Subsidy Assistance &amp; Documentation</li>
+        <li>Net-Metering, DISCOM Liaison &amp; Grid Connectivity</li>
+        <li>Annual Maintenance Contracts (AMC) &amp; Performance Monitoring</li>
+        <li>Solar Plant Insurance &amp; Extended Component Warranty</li>
+    </ul>
+
+    <h2 class="section-title">SYSTEM CONFIGURATION &amp; PRICING</h2>
+
+    <table class="price-table">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>System Capacity</th>
+                <th>Rate / kW</th>
+                <th>Value (INR)</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>
+                    Design, Supply, Erection &amp; Commissioning of Rooftop Solar System
+                </td>
+                <td class="center">{{SYSTEM_SIZE}} kW</td>
+                <td class="center">Rs. {{RATE_PER_KW}}</td>
+                <td class="center">Rs. {{TOTAL_COST}}</td>
+            </tr>
+
+            <tr class="soft-blue">
+                <td colspan="3" class="right"><strong>Discount (5%)</strong></td>
+                <td class="center">Rs. {{DISCOUNT}}</td>
+            </tr>
+
+            <tr class="soft-blue">
+                <td colspan="3" class="right"><strong>Final System Basic Price</strong></td>
+                <td class="center">Rs. {{FINAL_BASIC_PRICE}}</td>
+            </tr>
+
+            <tr class="soft-blue">
+                <td colspan="3" class="right">
+                    <strong>Final System Price (Inclusive of GST)</strong>
+                </td>
+                <td class="center">Rs. {{FINAL_PRICE_WITH_GST}}</td>
+            </tr>
+
+            <tr class="soft-blue">
+                <td colspan="3" class="right">
+                    <strong>Potential Subsidy (PM Surya Ghar Yojana)</strong>
+                </td>
+                <td class="center">Rs. {{SUBSIDY}}</td>
+            </tr>
+
+            <tr class="highlight">
+                <td colspan="3" class="right">
+                    <strong>Net Effective Price</strong>
+                </td>
+                <td class="center">Rs. {{NET_EFFECTIVE_PRICE}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 class="section-title" style="margin-top: 8mm;">PAYMENT TERMS</h2>
+
+    <table class="payment-table">
+        <thead>
+            <tr>
+                <th>Milestone</th>
+                <th>Payment by Customer</th>
+                <th>Third-Party Finance</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>Token Money</td>
+                <td class="center">Rs. {{TOKEN_MONEY}}</td>
+                <td class="center">Rs. {{TOKEN_MONEY_FINANCE}}</td>
+            </tr>
+
+            <tr class="alt">
+                <td>Before Dispatch</td>
+                <td class="center">Rs. {{BEFORE_DISPATCH}}</td>
+                <td class="center">DP + First Instalment by Bank</td>
+            </tr>
+
+            <tr>
+                <td>Before Metering</td>
+                <td class="center">Rs. {{BEFORE_METERING}}</td>
+                <td class="center">Final Instalment by Bank</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <strong>LMAR RENEWABLE ENERGY — ENERGY THAT NEVER SETS</strong>
+        <span class="page-no">Page 3</span>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     PAGE 4 — BILL OF MATERIALS / TERMS
+============================================================ -->
+<section class="page">
+
+    <div class="top-header">
+        <img class="small-logo" src="assets/lmar-logo.png" alt="LMAR Renewable Energy">
+
+        <div class="header-right">
+            COMMERCIAL PROPOSAL &amp; QUOTATION
+            <span>Quotation ID: {{QUOTATION_ID}}</span>
+        </div>
+    </div>
+
+    <h2 class="section-title">BILL OF MATERIALS</h2>
+
+    <table class="bom">
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Specification</th>
+                <th>Qty</th>
+                <th>Brand</th>
+                <th>Warranty</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>Solar PV Modules</td>
+                <td>Mono / Bifacial PERC — high efficiency</td>
+                <td class="center">{{PANEL_COUNT}}</td>
+                <td class="center">{{PANEL_BRAND}}</td>
+                <td class="center">25-30 Yrs</td>
+            </tr>
+
+            <tr class="alt">
+                <td>Solar Inverter</td>
+                <td>Grid-tied string inverter</td>
+                <td class="center">1</td>
+                <td class="center">{{INVERTER_BRAND}}</td>
+                <td class="center">5-10 Yrs</td>
+            </tr>
+
+            <tr>
+                <td>ACDB / DCDB</td>
+                <td>As per MNRE Guidelines</td>
+                <td class="center">1</td>
+                <td class="center">______</td>
+                <td class="center">5 Yrs</td>
+            </tr>
+
+            <tr class="alt">
+                <td>Mounting Structure</td>
+                <td>Hot-dip GI, wind-tested to 150 km/h</td>
+                <td class="center">1 Set</td>
+                <td class="center">______</td>
+                <td class="center">10 Yrs</td>
+            </tr>
+
+            <tr>
+                <td>DC / AC Cables</td>
+                <td>Copper, as per load rating</td>
+                <td class="center">As req.</td>
+                <td class="center">______</td>
+                <td class="center">-</td>
+            </tr>
+
+            <tr class="alt">
+                <td>Earthing &amp; LA Kit</td>
+                <td>As per MNRE Guidelines</td>
+                <td class="center">1 Set</td>
+                <td class="center">______</td>
+                <td class="center">-</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="terms">
+        <h2 class="section-title">TERMS &amp; CONDITIONS</h2>
+
+        <div class="term">
+            <strong>1. PRICE:</strong>
+            The quoted price is inclusive of design, sourcing, testing, installation,
+            supply &amp; commissioning as per the Bill of Materials submitted.
+            Any change in scope of work shall be charged extra. Price quoted is CIF-site and firm.
+        </div>
+
+        <div class="term">
+            <strong>2. DISCOM CHARGES:</strong>
+            Standard DISCOM fees and meter charges are included as per prevailing rates.
+            Any variance determined by DISCOM shall be adjusted with the customer.
+        </div>
+
+        <div class="term">
+            <strong>3. OTHER DISCOM CHARGES:</strong>
+            Load change / name change / name correction / phase change charges,
+            if required, shall be borne by the customer.
+        </div>
+
+        <div class="term">
+            <strong>4. VALIDITY OF OFFER:</strong>
+            This proposal is valid for 15 days from the date of issue and thereafter
+            subject to reconfirmation by LMAR Renewable Energy.
+        </div>
+
+        <div class="term">
+            <strong>5. WARRANTY:</strong>
+            Tampering, misuse, addition, dismantling, or reinstallation of system
+            components by unauthorised personnel will render the warranty null and void.
+        </div>
+    </div>
+
+    <div class="footer">
+        <strong>LMAR RENEWABLE ENERGY — ENERGY THAT NEVER SETS</strong>
+        <span class="page-no">Page 4</span>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     PAGE 5 — FINAL TERMS / ACCEPTANCE
+============================================================ -->
+<section class="page">
+
+    <div class="top-header">
+        <img class="small-logo" src="assets/lmar-logo.png" alt="LMAR Renewable Energy">
+
+        <div class="header-right">
+            COMMERCIAL PROPOSAL &amp; QUOTATION
+            <span>Quotation ID: {{QUOTATION_ID}}</span>
+        </div>
+    </div>
+
+    <div class="term">
+        <strong>6. SECURITY &amp; SAFETY:</strong>
+        On delivery of materials to the customer's site in good condition,
+        the customer is responsible for their safety and security until handed
+        over to LMAR's installation team.
+    </div>
+
+    <div class="term">
+        <strong>7. CIVIL &amp; STRUCTURAL WORK:</strong>
+        LMAR provides mounting structures for RCC roofs and raised structures.
+        The customer shall permit necessary roof works for civil foundation and structure fastening.
+    </div>
+
+    <div class="term">
+        <strong>8. OPERATION &amp; MAINTENANCE:</strong>
+        O&amp;M is inclusive as per the agreed tenure. Cleaning of modules remains
+        in the customer's scope.
+    </div>
+
+    <div class="term">
+        <strong>9. PUBLICITY RIGHTS:</strong>
+        The customer consents to LMAR using project data, photographs, and designs
+        for marketing purposes, provided such usage is not defamatory to the customer.
+    </div>
+
+    <div class="term">
+        <strong>10. EXTRA COSTS:</strong>
+        Standard cable length and structure are included in the quoted price;
+        no hidden charges apply beyond documented scope.
+    </div>
+
+    <h2 class="section-title" style="margin-top: 8mm;">ACCEPTANCE</h2>
+
+    <table class="acceptance-table">
+        <tr>
+            <td class="label-cell">Solar Consultant</td>
+            <td>____________________________</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Mobile Number</td>
+            <td>____________________________</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Regional Office</td>
+            <td>____________________________</td>
+        </tr>
+        <tr>
+            <td class="label-cell">GSTIN</td>
+            <td>____________________________</td>
+        </tr>
+    </table>
+
+    <div class="signature-row">
+        <div class="signature">
+            Authorised Signatory — LMAR Renewable Energy
+        </div>
+
+        <div class="signature">
+            Customer Acceptance Signature
+        </div>
+    </div>
+
+    <div class="final-footer">
+        <div class="company">LMAR RENEWABLE ENERGY</div>
+        <div class="tagline">ENERGY THAT NEVER SETS</div>
+        <div class="contact">
+            {{COMPANY_ADDRESS}} &nbsp; | &nbsp;
+            {{COMPANY_PHONE}} &nbsp; | &nbsp;
+            {{COMPANY_EMAIL}} &nbsp; | &nbsp;
+            {{COMPANY_WEBSITE}}
+        </div>
+    </div>
+
+    <div class="footer">
+        <strong>LMAR RENEWABLE ENERGY — ENERGY THAT NEVER SETS</strong>
+        <span class="page-no">Page 5</span>
+    </div>
+</section>
+
+</body>
+</html>
