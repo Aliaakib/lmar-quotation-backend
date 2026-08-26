@@ -8,6 +8,7 @@ const router = express.Router();
 const SCOPES = [
     "https://www.googleapis.com/auth/documents",
     "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/gmail.send",
 ];
 
 const tokenPath = path.resolve(
@@ -55,10 +56,12 @@ router.get("/callback", async (req, res) => {
         // SAVE TOKENS
         // ==========================================
 
-        fs.writeFileSync(
-            tokenPath,
-            JSON.stringify(tokens, null, 2)
-        );
+        if (!process.env.RENDER) {
+            fs.writeFileSync(
+                tokenPath,
+                JSON.stringify(tokens, null, 2)
+            );
+        }
 
         console.log("✅ Google OAuth tokens saved");
 
