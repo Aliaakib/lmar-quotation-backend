@@ -144,20 +144,27 @@ function calculateQuotation(data) {
 
 
     // ==========================================
-    // 9. DISCOUNT
+    // 9. DISCOUNT (form se aayega, hardcoded nahi)
     // ==========================================
 
-    const discountPercentage = 5;
+    const discountAmount = Number(
+        data.discountAmount ||
+        data.discount ||
+        0
+    );
 
-    const discountAmount =
-        projectValue *
-        (discountPercentage / 100);
+    if (!discountAmount || discountAmount <= 0) {
+        throw new Error("Discount Amount is required");
+    }
+
+    const discountPercentage =
+        projectValue > 0
+            ? (discountAmount / projectValue) * 100
+            : 0;
 
     const basicPriceAfterDiscount =
         projectValue -
         discountAmount;
-
-
     // ==========================================
     // 10. GST
     // ==========================================

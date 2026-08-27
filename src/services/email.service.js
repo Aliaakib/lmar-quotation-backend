@@ -1,53 +1,41 @@
+const fs = require("fs");
+const path = require("path");
 const nodemailer = require("nodemailer");
-
-/*
-|--------------------------------------------------------------------------
-| EMAIL TRANSPORTER
-|--------------------------------------------------------------------------
-*/
 
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT || 465),
-    secure:
-        String(process.env.EMAIL_SECURE).toLowerCase() === "true",
-
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: String(process.env.EMAIL_SECURE).toLowerCase() === "true",
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
 });
 
+const logoBase64 = fs.readFileSync(
+    path.resolve(process.cwd(), "src", "assets", "LMAR-LOGO.png")
+).toString("base64");
+const logoDataUri = `data:image/png;base64,${logoBase64}`;
 
-/*
-|--------------------------------------------------------------------------
-| VERIFY EMAIL CONNECTION
-|--------------------------------------------------------------------------
-*/
+// async function verifyEmailConnection() {
+//     // API-based hai, koi persistent connection verify nahi karni padti
+//     if (!process.env.RESEND_API_KEY) {
+//         throw new Error("RESEND_API_KEY missing in env");
+//     }
+//     console.log("✅ Email API key present, ready to send");
+//     return true;
+// }
 
 async function verifyEmailConnection() {
-
     try {
-
         await transporter.verify();
-
-        console.log(
-            "✅ Email server connection successful"
-        );
-
+        console.log("✅ Gmail SMTP connection successful");
         return true;
-
     } catch (error) {
-
-        console.error(
-            "❌ Email server connection failed:",
-            error.message
-        );
-
-        throw error;
+        console.error("❌ Gmail SMTP connection failed:", error.message);
+        return false;
     }
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -110,10 +98,10 @@ function generateQuotationEmailHTML(data, calculation, quotation) {
             calculation.subsidyAmount
         );
 
-    const pdfUrl =
-        `https://drive.google.com/file/d/${pdfFile.id}/view`;
-    const pdfDownloadUrl =
-        `https://drive.google.com/uc?id=${pdfFile.id}&export=download`;
+    // const pdfUrl =
+    //     `https://drive.google.com/file/d/${pdfFile.id}/view`;
+    // const pdfDownloadUrl =
+    //     `https://drive.google.com/uc?id=${pdfFile.id}&export=download`;
 
 
     /*
@@ -991,7 +979,7 @@ async function sendQuotationEmail({
         ">
 
             <img
-                src="cid:lmarlogo"
+               src="cid:lmarlogo"
                 alt="LMAR Renewable Energy"
                 style="
                     max-width:220px;
@@ -1354,46 +1342,73 @@ async function sendQuotationEmail({
             // 3. DIRECT PDF ATTACHMENT + LOGO
             // ==========================================
 
-            attachments: [
-                {
-                    filename:
-                        `LMAR Quotation - ${data.quotationId}.pdf`,
+            // attachments: [
+            //     {
+            //         filename:
+            //             `LMAR Quotation - ${data.quotationId}.pdf`,
 
-                    content: pdfBuffer,
+            //         content: pdfBuffer,
 
-                    contentType: "application/pdf",
-                },
+            //         contentType: "application/pdf",
+            //     },
 
-                // Logo attachment — required so cid:lmarlogo in the
-                // header actually resolves to an image (previously missing)
-                {
-                    filename: "LMAR-LOGO.png",
-                    path: require("path").resolve(
-                        process.cwd(),
-                        "src",
-                        "assets",
-                        "LMAR-LOGO.png"
-                    ),
-                    cid: "lmarlogo",
-                    contentType: "image/png",
-                },
-            ],
+            //     // Logo attachment — required so cid:lmarlogo in the
+            //     // header actually resolves to an image (previously missing)
+            //     {
+            //         filename: "LMAR-LOGO.png",
+            //         path: require("path").resolve(
+            //             process.cwd(),
+            //             "src",
+            //             "assets",
+            //             "LMAR-LOGO.png"
+            //         ),
+            //         cid: "lmarlogo",
+            //         contentType: "image/png",
+            //     },
+            // ],
         };
 
         // ==========================================
         // 4. SEND EMAIL
         // ==========================================
 
-        const info = await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail({
+            from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+            to: customerEmail,
+            subject: mailOptions.subject,
+            html: mailOptions.html,
+            attachments: [
+                {
+                    filename: `LMAR Quotation - ${data.quotationId}.pdf`,
+                    content: pdfBuffer,
+                },
+                {
+                    filename: "LMAR-LOGO.png",
+                    path: path.resolve(process.cwd(), "src", "assets", "LMAR-LOGO.png"),
+                    cid: "lmarlogo",
+                    contentType: "image/png",
+                },
+            ],
+        });
 
-        console.log(
-            `✅ Quotation email sent: ${info.messageId}`
-        );
+        console.log(`✅ Quotation email sent: ${info.messageId}`);
 
         return {
             success: true,
             messageId: info.messageId,
         };
+
+        // if (error) {
+        //     console.error("❌ Resend error:", error);
+        //     throw new Error(error.message);
+        // }
+
+        // console.log(`✅ Quotation email sent: ${info.id}`);
+
+        // return {
+        //     success: true,
+        //     messageId: info.id,
+        // };
 
     } catch (error) {
 
@@ -1456,7 +1471,7 @@ async function sendInternalQuotationEmail({
 
                             <!-- LOGO -->
                             <img
-                                src="cid:lmar-logo"
+                                  src="cid:lmar-logo"
                                 alt="LMAR Renewable Energy"
                                 style="
                                     max-width:220px;
@@ -1830,38 +1845,48 @@ async function sendInternalQuotationEmail({
                     content: quotation.pdfBuffer,
                     contentType: "application/pdf",
                 },
-
-                // ==========================================
-                // LMAR LOGO FOR EMAIL
-                // ==========================================
                 {
                     filename: "LMAR-LOGO.png",
-                    path: require("path").resolve(
-                        process.cwd(),
-                        "src",
-                        "assets",
-                        "LMAR-LOGO.png"
-                    ),
+                    path: require("path").resolve(process.cwd(), "src", "assets", "LMAR-LOGO.png"),
                     cid: "lmar-logo",
                     contentType: "image/png",
                 },
             ],
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail({
+            from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+            to: agentEmail,
+            subject: mailOptions.subject,
+            html: mailOptions.html,
+            attachments: [
+                {
+                    filename: `LMAR Internal Quotation - ${data.quotationId}.pdf`,
+                    content: quotation.pdfBuffer,
+                    contentType: "application/pdf",
+                },
+            ],
+        });
 
-        console.log(
-            `✅ Internal quotation email sent to agent: ${agentEmail}`
-        );
-
-        console.log(
-            `📧 Message ID: ${info.messageId}`
-        );
+        console.log(`✅ Quotation email sent: ${info.messageId}`);
 
         return {
             success: true,
             messageId: info.messageId,
         };
+
+        // if (error) {
+        //     console.error("❌ Resend error:", error);
+        //     throw new Error(error.message);
+        // }
+
+        // console.log(`✅ Internal quotation email sent to agent: ${agentEmail}`);
+        // console.log(`📧 Message ID: ${info.id}`);
+
+        // return {
+        //     success: true,
+        //     messageId: info.id,
+        // };
 
     } catch (error) {
         console.error(

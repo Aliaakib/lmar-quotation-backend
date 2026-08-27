@@ -20,6 +20,34 @@ async function receiveFormSubmission(req, res) {
         const data = req.body;
 
         // ==========================================
+        // NORMALIZE PANEL COUNT
+        // ==========================================
+
+        if (
+            data.systemPhase &&
+            String(data.systemPhase).toLowerCase().includes("1 phase")
+        ) {
+            data.panels1Phase =
+                data.panels1Phase ||
+                data.numberOfPanels1Phase ||
+                data["Number of Panels - 1 Phase"] ||
+                data.panelCount ||
+                "";
+        }
+
+        if (
+            data.systemPhase &&
+            String(data.systemPhase).toLowerCase().includes("3 phase")
+        ) {
+            data.panels3Phase =
+                data.panels3Phase ||
+                data.numberOfPanels3Phase ||
+                data["Number of Panels - 3 Phase"] ||
+                data.panelCount ||
+                "";
+        }
+
+        // ==========================================
         // 1. RAW FORM DATA DEBUG
         // ==========================================
 
@@ -105,6 +133,17 @@ async function receiveFormSubmission(req, res) {
         // ==========================================
         // 5. CALCULATE QUOTATION
         // ==========================================
+        // ==========================================
+        // 5A. PANEL DEBUG
+        // ==========================================
+
+        console.log("========== PANEL DEBUG ==========");
+        console.log("systemPhase:", data.systemPhase);
+        console.log("panels1Phase:", data.panels1Phase);
+        console.log("panels3Phase:", data.panels3Phase);
+        console.log("panelCount:", data.panelCount);
+        console.log("ALL FORM DATA:", JSON.stringify(data, null, 2));
+        console.log("=================================");
 
         const calculation =
             calculateQuotation(data);
@@ -268,26 +307,36 @@ async function receiveFormSubmission(req, res) {
             throw new Error("Agent email is required");
         }
 
-        await sendInternalQuotationEmail({
-            agentEmail: data.agentEmail,
+        try {
+            await sendInternalQuotationEmail({
+                agentEmail: data.agentEmail,
+                data: {
+                    customerName: data.customerName || "",
+                    quotationId,
+                    quotationDate,
+                    panelType: data.panelType || "",
+                    inverter: calculation.inverter || "",
+                },
+                calculation,
+                quotation: {
+                    pdfBuffer: internalPDF.pdfBuffer,
+                    pdfFileName: internalPDF.name,
+                    pdfUrl: internalPDF.pdfUrl,
+                },
+            });
 
-            data: {
-                customerName: data.customerName || "",
-                quotationId,
-                quotationDate,
-                panelType: data.panelType || "",
-                inverter:
-                    calculation.inverter || "",
-            },
+            console.log(
+                `✅ Internal quotation email sent to agent: ${data.agentEmail}`
+            );
 
-            calculation,
+        } catch (emailError) {
 
-            quotation: {
-                pdfBuffer: internalPDF.pdfBuffer,
-                pdfFileName: internalPDF.name,
-                pdfUrl: internalPDF.pdfUrl,
-            },
-        });
+            console.error(
+                "⚠️ Internal quotation email failed, continuing:",
+                emailError.message
+            );
+
+        }
 
         console.log(
             `✅ Internal quotation email sent to agent: ${data.agentEmail}`
