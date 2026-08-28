@@ -148,13 +148,13 @@ function calculateQuotation(data) {
     // ==========================================
 
     const discountAmount = Number(
-        data.discountAmount ||
-        data.discount ||
+        data.discountAmount ??
+        data.discount ??
         0
     );
 
-    if (!discountAmount || discountAmount <= 0) {
-        throw new Error("Discount Amount is required");
+    if (isNaN(discountAmount) || discountAmount < 0) {
+        throw new Error("Discount Amount must be 0 or greater");
     }
 
     const discountPercentage =
@@ -169,7 +169,7 @@ function calculateQuotation(data) {
     // 10. GST
     // ==========================================
 
-    const gstPercentage = 18;
+    const gstPercentage = 5;
 
     const gstAmount =
         basicPriceAfterDiscount *
@@ -184,24 +184,46 @@ function calculateQuotation(data) {
     // 11. SUBSIDY
     // ==========================================
 
-    const subsidyType = String(
-        data.subsidyType ||
-        "Residential"
-    ).trim().toLowerCase();
+    const subsidyTypeRaw = String(
+        data.subsidyType ?? ""
+    ).trim();
+
+    const subsidyType = subsidyTypeRaw
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
 
     let subsidyAmount = 0;
 
-    if (subsidyType === "residential") {
+    switch (subsidyType) {
 
-        subsidyAmount = 78000;
+        case "residential":
+            // Residential = ₹78,000
+            subsidyAmount = 78000;
+            break;
 
-    } else if (subsidyType === "commercial") {
+        case "commercial":
+            // Commercial = ₹0
+            subsidyAmount = 0;
+            break;
 
-        subsidyAmount =
-            systemSize * 18000;
+        case "no":
+            // No subsidy = ₹0
+            subsidyAmount = 0;
+            break;
+
+        default:
+            // Unknown / empty = ₹0
+            subsidyAmount = 0;
+            break;
     }
 
-
+    console.log("=================================");
+    console.log("SUBSIDY DEBUG - NODE.JS");
+    console.log("=================================");
+    console.log("Received subsidyType:", data.subsidyType);
+    console.log("Normalized subsidyType:", subsidyType);
+    console.log("Calculated subsidyAmount:", subsidyAmount);
     // ==========================================
     // 12. CUSTOMER PAYABLE
     // ==========================================
