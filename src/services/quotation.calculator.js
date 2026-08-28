@@ -102,12 +102,26 @@ function calculateQuotation(data) {
     // 5. ADDITIONAL AGENT INCREASE
     // ==========================================
 
-    const additionalMarginPerKW = Number(
-        data.basePriceIncreasePerKW ||
-        data.basePriceIncrease ||
-        data.additionalMarginPerKW ||
-        0
-    );
+    const rawAdditionalMargin =
+        data.basePriceIncreasePerKW ??
+        data.basePriceIncrease ??
+        data.additionalMarginPerKW ??
+        data["Increase in Base Price (₹ per kW)"] ??
+        0;
+
+    const additionalMarginPerKW =
+        Number(
+            String(rawAdditionalMargin)
+                .replace(/₹/g, "")
+                .replace(/,/g, "")
+                .trim()
+        ) || 0;
+
+    console.log("=================================");
+    console.log("ADDITIONAL MARGIN DEBUG");
+    console.log("Raw additional margin:", rawAdditionalMargin);
+    console.log("Parsed additionalMarginPerKW:", additionalMarginPerKW);
+    console.log("=================================");
 
 
     // ==========================================

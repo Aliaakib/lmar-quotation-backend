@@ -231,12 +231,17 @@ async function receiveFormSubmission(req, res) {
 
             CUSTOMER_PAYABLE:
                 calculation.customerPayable.toFixed(2),
-
             FIXED_DEALER_MARGIN_PER_KW:
                 calculation.fixedDealerMarginPerKW,
 
             ADDITIONAL_MARGIN_PER_KW:
                 calculation.additionalMarginPerKW,
+
+            FIXED_DEALER_MARGIN:
+                calculation.fixedDealerMargin.toFixed(2),
+
+            ADDITIONAL_DEALER_MARGIN:
+                calculation.additionalDealerMargin.toFixed(2),
 
             TOTAL_DEALER_MARGIN:
                 calculation.totalDealerMargin.toFixed(2)

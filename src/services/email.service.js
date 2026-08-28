@@ -932,7 +932,18 @@ async function sendQuotationEmail({
         // ==========================================
         // 1. GET GENERATED PDF BUFFER
         // ==========================================
+        const recipientEmail =
+    customerEmail ||
+    data?.customerEmail ||
+    "";
 
+if (!recipientEmail || !String(recipientEmail).trim()) {
+    throw new Error(
+        "Customer email is missing. Expected customerEmail or data.customerEmail."
+    );
+}
+
+console.log("📧 Customer email recipient:", recipientEmail);
         const pdfBuffer = quotation.pdfBuffer;
 
         if (!pdfBuffer) {
@@ -948,7 +959,7 @@ async function sendQuotationEmail({
         const mailOptions = {
             from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
 
-            to: customerEmail,
+            to: recipientEmail,
 
             subject: `Solar Quotation - ${data.quotationId}`,
 
@@ -1374,7 +1385,7 @@ async function sendQuotationEmail({
 
         const info = await transporter.sendMail({
             from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
-            to: customerEmail,
+            to: recipientEmail,
             subject: mailOptions.subject,
             html: mailOptions.html,
             attachments: [
