@@ -13,6 +13,10 @@ const {
     exportQuotationAsPDF
 } = require("../services/googleQuotation.service");
 
+const {
+    generateQuotationId
+} = require("../services/quotationId.service");
+
 async function receiveFormSubmission(req, res) {
 
     try {
@@ -189,9 +193,13 @@ async function receiveFormSubmission(req, res) {
         // 6. QUOTATION ID
         // ==========================================
 
-        const quotationId =
-            data.quotationId ||
-            `LMAR-${Date.now()}`;
+        const isValidNewFormat =
+            data.quotationId &&
+            /^LMAR-\d{6}-\d{3}$/.test(String(data.quotationId).trim());
+
+        const quotationId = isValidNewFormat
+            ? String(data.quotationId).trim()
+            : generateQuotationId();
 
         // ==========================================
         // 7. QUOTATION DATE
