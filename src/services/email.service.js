@@ -4,6 +4,10 @@ dns.setDefaultResultOrder("ipv4first");
 const fs = require("fs");
 const path = require("path");
 const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || "smtp.gmail.com",
@@ -27,16 +31,11 @@ const logoBase64 = fs.readFileSync(
 ).toString("base64");
 const logoDataUri = `data:image/png;base64,${logoBase64}`;
 
-// async function verifyEmailConnection() {
-//     // API-based hai, koi persistent connection verify nahi karni padti
-//     if (!process.env.RESEND_API_KEY) {
-//         throw new Error("RESEND_API_KEY missing in env");
-//     }
-//     console.log("✅ Email API key present, ready to send");
-//     return true;
-// }
-
 async function verifyEmailConnection() {
+    if (process.env.RESEND_API_KEY && resend) {
+        console.log("✅ Resend API key present, ready to send emails via Resend HTTP API");
+        return true;
+    }
     try {
         await transporter.verify();
         console.log("✅ Gmail SMTP connection successful");
@@ -943,17 +942,17 @@ async function sendQuotationEmail({
         // 1. GET GENERATED PDF BUFFER
         // ==========================================
         const recipientEmail =
-    customerEmail ||
-    data?.customerEmail ||
-    "";
+            customerEmail ||
+            data?.customerEmail ||
+            "";
 
-if (!recipientEmail || !String(recipientEmail).trim()) {
-    throw new Error(
-        "Customer email is missing. Expected customerEmail or data.customerEmail."
-    );
-}
+        if (!recipientEmail || !String(recipientEmail).trim()) {
+            throw new Error(
+                "Customer email is missing. Expected customerEmail or data.customerEmail."
+            );
+        }
 
-console.log("📧 Customer email recipient:", recipientEmail);
+        console.log("📧 Customer email recipient:", recipientEmail);
         const pdfBuffer = quotation.pdfBuffer;
 
         if (!pdfBuffer) {
@@ -1390,7 +1389,7 @@ console.log("📧 Customer email recipient:", recipientEmail);
         };
 
         // ==========================================
-        // 4. SEND EMAIL
+        // 4. SEND EMAIL VIA RESEND OR NODEMAILER
         // ==========================================
 
         const attachmentFileName = quotation?.pdfFileName || (
@@ -1398,6 +1397,37 @@ console.log("📧 Customer email recipient:", recipientEmail);
                 ? `${String(data.customerName).trim()} - ${data.quotationId}.pdf`
                 : `LMAR Quotation - ${data.quotationId}.pdf`
         );
+
+        if (process.env.RESEND_API_KEY && resend) {
+            console.log(`🚀 Sending customer quotation email via Resend API to: ${recipientEmail}`);
+
+            const fromName = process.env.EMAIL_FROM_NAME || "LMAR Renewable Energy";
+            const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
+            const resendResponse = await resend.emails.send({
+                from: `"${fromName}" <${fromEmail}>`,
+                to: [recipientEmail],
+                subject: mailOptions.subject,
+                html: mailOptions.html,
+                attachments: [
+                    {
+                        filename: attachmentFileName,
+                        content: pdfBuffer.toString("base64"),
+                    },
+                ],
+            });
+
+            if (resendResponse.error) {
+                console.error("❌ Resend API error sending customer email:", resendResponse.error);
+                throw new Error(resendResponse.error.message || "Resend API error");
+            }
+
+            console.log(`✅ Customer quotation email sent via Resend API: ${resendResponse.data?.id}`);
+            return {
+                success: true,
+                messageId: resendResponse.data?.id,
+            };
+        }
 
         const info = await transporter.sendMail({
             from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
@@ -1418,7 +1448,7 @@ console.log("📧 Customer email recipient:", recipientEmail);
             ],
         });
 
-        console.log(`✅ Quotation email sent: ${info.messageId}`);
+        console.log(`✅ Customer quotation email sent via Nodemailer: ${info.messageId}`);
 
         return {
             success: true,
@@ -1887,6 +1917,37 @@ async function sendInternalQuotationEmail({
                 : `LMAR Internal Quotation - ${data.quotationId}.pdf`
         );
 
+        if (process.env.RESEND_API_KEY && resend) {
+            console.log(`🚀 Sending internal quotation email via Resend API to agent: ${agentEmail}`);
+
+            const fromName = process.env.EMAIL_FROM_NAME || "LMAR Renewable Energy";
+            const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
+            const resendResponse = await resend.emails.send({
+                from: `"${fromName}" <${fromEmail}>`,
+                to: [agentEmail],
+                subject: mailOptions.subject,
+                html: mailOptions.html,
+                attachments: quotation.pdfBuffer ? [
+                    {
+                        filename: internalAttachmentFileName,
+                        content: quotation.pdfBuffer.toString("base64"),
+                    },
+                ] : [],
+            });
+
+            if (resendResponse.error) {
+                console.error("❌ Resend API error sending internal email:", resendResponse.error);
+                throw new Error(resendResponse.error.message || "Resend API error");
+            }
+
+            console.log(`✅ Internal quotation email sent via Resend API: ${resendResponse.data?.id}`);
+            return {
+                success: true,
+                messageId: resendResponse.data?.id,
+            };
+        }
+
         const info = await transporter.sendMail({
             from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
             to: agentEmail,
@@ -1907,7 +1968,7 @@ async function sendInternalQuotationEmail({
             ],
         });
 
-        console.log(`✅ Quotation email sent: ${info.messageId}`);
+        console.log(`✅ Internal quotation email sent via Nodemailer: ${info.messageId}`);
 
         return {
             success: true,
