@@ -1402,11 +1402,16 @@ async function sendQuotationEmail({
             console.log(`🚀 Sending customer quotation email via Resend API to: ${recipientEmail}`);
 
             const fromName = process.env.EMAIL_FROM_NAME || "LMAR Renewable Energy";
-            const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+            let fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+            if (fromEmail.includes("@gmail.com") || fromEmail.includes("@yahoo.com") || fromEmail.includes("@hotmail.com")) {
+                fromEmail = "onboarding@resend.dev";
+            }
+            const replyToEmail = process.env.EMAIL_USER || "lmarrenewableenergy1@gmail.com";
 
             const resendResponse = await resend.emails.send({
-                from: `"${fromName}" <${fromEmail}>`,
+                from: `${fromName} <${fromEmail}>`,
                 to: [recipientEmail],
+                reply_to: replyToEmail,
                 subject: mailOptions.subject,
                 html: mailOptions.html,
                 attachments: [
@@ -1921,11 +1926,16 @@ async function sendInternalQuotationEmail({
             console.log(`🚀 Sending internal quotation email via Resend API to agent: ${agentEmail}`);
 
             const fromName = process.env.EMAIL_FROM_NAME || "LMAR Renewable Energy";
-            const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+            let fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+            if (fromEmail.includes("@gmail.com") || fromEmail.includes("@yahoo.com") || fromEmail.includes("@hotmail.com")) {
+                fromEmail = "onboarding@resend.dev";
+            }
+            const replyToEmail = process.env.EMAIL_USER || "lmarrenewableenergy1@gmail.com";
 
             const resendResponse = await resend.emails.send({
-                from: `"${fromName}" <${fromEmail}>`,
+                from: `${fromName} <${fromEmail}>`,
                 to: [agentEmail],
+                reply_to: replyToEmail,
                 subject: mailOptions.subject,
                 html: mailOptions.html,
                 attachments: quotation.pdfBuffer ? [
