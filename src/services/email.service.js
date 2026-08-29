@@ -1383,6 +1383,12 @@ console.log("📧 Customer email recipient:", recipientEmail);
         // 4. SEND EMAIL
         // ==========================================
 
+        const attachmentFileName = quotation?.pdfFileName || (
+            data.customerName
+                ? `${String(data.customerName).trim()} - ${data.quotationId}.pdf`
+                : `LMAR Quotation - ${data.quotationId}.pdf`
+        );
+
         const info = await transporter.sendMail({
             from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
             to: recipientEmail,
@@ -1390,7 +1396,7 @@ console.log("📧 Customer email recipient:", recipientEmail);
             html: mailOptions.html,
             attachments: [
                 {
-                    filename: `LMAR Quotation - ${data.quotationId}.pdf`,
+                    filename: attachmentFileName,
                     content: pdfBuffer,
                 },
                 {
@@ -1865,6 +1871,12 @@ async function sendInternalQuotationEmail({
             ],
         };
 
+        const internalAttachmentFileName = quotation?.pdfFileName || (
+            data.customerName
+                ? `${String(data.customerName).trim()} - Internal - ${data.quotationId}.pdf`
+                : `LMAR Internal Quotation - ${data.quotationId}.pdf`
+        );
+
         const info = await transporter.sendMail({
             from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
             to: agentEmail,
@@ -1872,9 +1884,15 @@ async function sendInternalQuotationEmail({
             html: mailOptions.html,
             attachments: [
                 {
-                    filename: `LMAR Internal Quotation - ${data.quotationId}.pdf`,
+                    filename: internalAttachmentFileName,
                     content: quotation.pdfBuffer,
                     contentType: "application/pdf",
+                },
+                {
+                    filename: "LMAR-LOGO.png",
+                    path: require("path").resolve(process.cwd(), "src", "assets", "LMAR-LOGO.png"),
+                    cid: "lmar-logo",
+                    contentType: "image/png",
                 },
             ],
         });

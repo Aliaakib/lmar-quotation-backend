@@ -267,12 +267,18 @@ async function receiveFormSubmission(req, res) {
             "Creating Internal LMAR quotation..."
         );
 
+        const customerName = data.customerName ? String(data.customerName).trim() : "";
+        const internalDocTitle = customerName
+            ? `${customerName} - Internal - ${quotationId}`
+            : `LMAR Internal Quotation - ${quotationId}`;
+        const internalPdfTitle = `${internalDocTitle}.pdf`;
+
         const internalQuotation =
             await createQuotationFromTemplate(
 
                 internalTemplateId,
 
-                `LMAR Internal Quotation - ${quotationId}`
+                internalDocTitle
 
             );
 
@@ -297,7 +303,7 @@ async function receiveFormSubmission(req, res) {
 
                 internalQuotation.id,
 
-                `LMAR Internal Quotation - ${quotationId}.pdf`
+                internalPdfTitle
 
             );
 
@@ -423,12 +429,17 @@ async function receiveFormSubmission(req, res) {
                 "Creating Customer LMAR quotation..."
             );
 
+            const customerDocTitle = customerName
+                ? `${customerName} - ${quotationId}`
+                : `LMAR Customer Quotation - ${quotationId}`;
+            const customerPdfTitle = `${customerDocTitle}.pdf`;
+
             customerQuotation =
                 await createQuotationFromTemplate(
 
                     customerTemplateId,
 
-                    `LMAR Customer Quotation - ${quotationId}`
+                    customerDocTitle
 
                 );
 
@@ -451,7 +462,7 @@ async function receiveFormSubmission(req, res) {
             customerPDF =
                 await exportQuotationAsPDF(
                     customerQuotation.id,
-                    `LMAR Customer Quotation - ${quotationId}.pdf`
+                    customerPdfTitle
                 );
             if (
                 String(sendQuotationToCustomer).toLowerCase() === "yes"
