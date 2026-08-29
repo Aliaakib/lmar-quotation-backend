@@ -743,6 +743,15 @@ Please contact us if you have any questions regarding your solar project.
     Please do not reply directly to this email.
 </div>
 
+<div style="
+    margin-top:12px;
+    font-size:11px;
+    color:#b9c8d9;
+    letter-spacing:0.3px;
+">
+    DEVELOPED BY <a href="https://one10technologies.com" target="_blank" style="color:#8bc34a;text-decoration:none;font-weight:bold;">ONE10 TECHNOLOGIES IT</a>
+</div>
+
 </td>
 
 </tr>
@@ -1900,6 +1909,15 @@ async function sendInternalQuotationEmail({
                             ">
                                 © ${new Date().getFullYear()}
                                 LMAR Renewable Energy
+                            </div>
+
+                            <div style="
+                                margin-top:10px;
+                                font-size:11px;
+                                color:#b9c8d9;
+                                letter-spacing:0.3px;
+                            ">
+                                DEVELOPED BY <a href="https://one10technologies.com" target="_blank" style="color:#8fc63f;text-decoration:none;font-weight:bold;">ONE10 TECHNOLOGIES IT</a>
                             </div>
 
                         </div>
