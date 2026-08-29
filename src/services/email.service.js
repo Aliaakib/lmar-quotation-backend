@@ -946,10 +946,8 @@ async function sendQuotationEmail({
         // ==========================================
         // 1. GET GENERATED PDF BUFFER
         // ==========================================
-        const recipientEmail =
-            customerEmail ||
-            data?.customerEmail ||
-            "";
+        const rawEmail = customerEmail || data?.customerEmail || "";
+        const recipientEmail = String(rawEmail).trim().toLowerCase();
 
         if (!recipientEmail || !String(recipientEmail).trim()) {
             throw new Error(
@@ -1517,9 +1515,10 @@ async function sendInternalQuotationEmail({
     quotation,
 }) {
     try {
-        if (!agentEmail) {
+        if (!agentEmail || !String(agentEmail).trim()) {
             throw new Error("Agent email is required");
         }
+        agentEmail = String(agentEmail).trim().toLowerCase();
 
         if (!quotation?.pdfBuffer) {
             throw new Error("Internal quotation PDF buffer is missing");

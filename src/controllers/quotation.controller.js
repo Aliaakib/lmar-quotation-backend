@@ -23,10 +23,37 @@ async function receiveFormSubmission(req, res) {
 
         const data = req.body || {};
 
+        // Helper to select correct item from array when Google Form question titles are identical
+        const selectFormValueForPhase = (val, phaseStr) => {
+            if (!Array.isArray(val)) {
+                return String(val || "").trim();
+            }
+
+            const is3P = phaseStr && String(phaseStr).toLowerCase().includes("3 phase");
+            const is1P = phaseStr && String(phaseStr).toLowerCase().includes("1 phase");
+
+            if (is3P && val.length >= 2) {
+                const secondItem = String(val[1] || "").trim();
+                if (secondItem !== "") return secondItem;
+            }
+
+            if (is1P && val.length >= 1) {
+                const firstItem = String(val[0] || "").trim();
+                if (firstItem !== "") return firstItem;
+            }
+
+            // Fallback: return last non-empty item for 3 phase, first non-empty item for 1 phase
+            for (let i = val.length - 1; i >= 0; i--) {
+                const str = String(val[i] || "").trim();
+                if (str !== "") return str;
+            }
+            return "";
+        };
+
         // Merge raw form values if Apps Script passed rawFormValues object
         if (data.rawFormValues && typeof data.rawFormValues === "object") {
             for (const [key, val] of Object.entries(data.rawFormValues)) {
-                const valueStr = Array.isArray(val) ? String(val[0] || "").trim() : String(val || "").trim();
+                const valueStr = selectFormValueForPhase(val, data.systemPhase);
                 if (valueStr !== "") {
                     if (data[key] === undefined || data[key] === null || String(data[key]).trim() === "") {
                         data[key] = valueStr;
@@ -36,44 +63,190 @@ async function receiveFormSubmission(req, res) {
         }
 
         // ==========================================
-        // NORMALIZE PANEL COUNT
+        // LOWERCASE EMAIL ADDRESSES
+        // ==========================================
+        if (data.customerEmail) {
+            data.customerEmail = String(data.customerEmail).trim().toLowerCase();
+        } else if (data["Customer's Email ID"]) {
+            data.customerEmail = String(data["Customer's Email ID"]).trim().toLowerCase();
+        }
+
+        if (data.agentEmail) {
+            data.agentEmail = String(data.agentEmail).trim().toLowerCase();
+        } else if (data["Email Address"]) {
+            data.agentEmail = String(data["Email Address"]).trim().toLowerCase();
+        }
+
+        // ==========================================
+        // NORMALIZE PANEL COUNT & FILTER OUT PANEL TYPES
         // ==========================================
 
-        const getFirstNonEmpty = (...vals) => {
+        const parseValidPanelCount = (val) => {
+            if (val === undefined || val === null) return 0;
+            const str = String(val).trim();
+            if (!str) return 0;
+
+            // Ignore strings containing model/brand/wattage keywords
+            if (/(?:watt|wattage|wp|\bw\b|sunfive|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
+                return 0;
+            }
+
+            const cleanStr = str.replace(/,/g, "");
+            const num = Number(cleanStr);
+            if (Number.isFinite(num) && num > 0 && num <= 300) {
+                return num;
+            }
+
+            const match = str.match(/(\d+)\s*(?:nos|panels|panel|pcs)?/i);
+            if (match) {
+                const extracted = Number(match[1]);
+                if (Number.isFinite(extracted) && extracted > 0 && extracted <= 300) {
+                    return extracted;
+                }
+            }
+
+            return 0;
+        };
+
+        const getFirstValidPanelCount = (...vals) => {
             for (const v of vals) {
-                if (v !== undefined && v !== null && String(v).trim() !== "") {
-                    return String(v).trim();
+                const count = parseValidPanelCount(v);
+                if (count > 0) {
+                    return String(count);
                 }
             }
             return "";
         };
 
-        if (
-            data.systemPhase &&
-            String(data.systemPhase).toLowerCase().includes("1 phase")
-        ) {
-            data.panels1Phase = getFirstNonEmpty(
-                data.panels1Phase,
-                data.numberOfPanels1Phase,
-                data["Number of Panels - 1 Phase"],
-                data["Number of Panels - 1 Phase *"],
-                data["Number of Panels (1 Phase)"],
-                data.panelCount
-            );
-        }
+        const findPanelCountFromRawValues = (phaseStr) => {
+            if (!data.rawFormValues || typeof data.rawFormValues !== "object") return "";
+
+            const is3Phase = phaseStr && phaseStr.toLowerCase().includes("3 phase");
+            const is1Phase = phaseStr && phaseStr.toLowerCase().includes("1 phase");
+
+            // Helper to get all valid candidate counts from a rawVal (string or array)
+            const getCountsFromRawVal = (rawVal) => {
+                const candidates = Array.isArray(rawVal) ? rawVal : [rawVal];
+                const validCounts = [];
+                for (const candidate of candidates) {
+                    const cnt = parseValidPanelCount(candidate);
+                    if (cnt > 0) validCounts.push(cnt);
+                }
+                return validCounts;
+            };
+
+            // 1. Phase-aware search
+            for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
+                const normKey = rawKey.toLowerCase();
+                const isTypeOrBrandKey = /(?:type|brand|model|watt|location|make|spec|inverter|invertor)/i.test(normKey);
+                if (isTypeOrBrandKey) continue;
+
+                const isPanelKey = /(?:panel|qty|quantity)/i.test(normKey);
+                if (!isPanelKey) continue;
+
+                if (is3Phase && normKey.includes("1 phase") && !normKey.includes("3 phase")) continue;
+                if (is1Phase && normKey.includes("3 phase") && !normKey.includes("1 phase")) continue;
+
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    if (is3Phase && validCounts.length >= 2) return String(validCounts[1]);
+                    if (is3Phase) return String(validCounts[validCounts.length - 1]);
+                    return String(validCounts[0]);
+                }
+            }
+
+            // 2. Generic panel key search across all raw values
+            for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
+                const normKey = rawKey.toLowerCase();
+                const isTypeOrBrandKey = /(?:type|brand|model|watt|location|make|spec|inverter|invertor)/i.test(normKey);
+                if (isTypeOrBrandKey) continue;
+
+                const isPanelKey = /(?:panel|qty|quantity)/i.test(normKey);
+                if (!isPanelKey) continue;
+
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    if (is3Phase && validCounts.length >= 2) return String(validCounts[1]);
+                    if (is3Phase) return String(validCounts[validCounts.length - 1]);
+                    return String(validCounts[0]);
+                }
+            }
+
+            // 3. Fallback search across ANY raw form field whose value parses to 1..300
+            for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
+                const normKey = rawKey.toLowerCase();
+                const isNonCountField = /(?:type|brand|model|watt|location|make|spec|inverter|invertor|structure|pincode|mobile|email|price|margin|gst|phase|discom|project|partner|subsidy|customer|dropdown)/i.test(normKey);
+                if (isNonCountField) continue;
+
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    if (is3Phase && validCounts.length >= 2) return String(validCounts[1]);
+                    if (is3Phase) return String(validCounts[validCounts.length - 1]);
+                    return String(validCounts[0]);
+                }
+            }
+
+            return "";
+        };
 
         if (
             data.systemPhase &&
             String(data.systemPhase).toLowerCase().includes("3 phase")
         ) {
-            data.panels3Phase = getFirstNonEmpty(
+            delete data.panels1Phase;
+            delete data.numberOfPanels1Phase;
+
+            const raw3P = findPanelCountFromRawValues("3 Phase");
+            data.panels3Phase = raw3P || getFirstValidPanelCount(
                 data.panels3Phase,
                 data.numberOfPanels3Phase,
                 data["Number of Panels - 3 Phase"],
                 data["Number of Panels - 3 Phase *"],
-                data["Number of Panels (3 Phase)"],
+                data["Number of Panels (3 Phase)"]
+            );
+
+            if (data.panels3Phase) {
+                data.panelCount = data.panels3Phase;
+            }
+        }
+
+        if (
+            data.systemPhase &&
+            String(data.systemPhase).toLowerCase().includes("1 phase")
+        ) {
+            delete data.panels3Phase;
+            delete data.numberOfPanels3Phase;
+
+            const raw1P = findPanelCountFromRawValues("1 Phase");
+            data.panels1Phase = raw1P || getFirstValidPanelCount(
+                data.panels1Phase,
+                data.numberOfPanels1Phase,
+                data["Number of Panels - 1 Phase"],
+                data["Number of Panels - 1 Phase *"],
+                data["Number of Panels (1 Phase)"]
+            );
+
+            if (data.panels1Phase) {
+                data.panelCount = data.panels1Phase;
+            }
+        }
+
+        if (!data.panelCount) {
+            const fallbackCount = findPanelCountFromRawValues(data.systemPhase) || getFirstValidPanelCount(
+                data.panels3Phase,
+                data.panels1Phase,
                 data.panelCount
             );
+
+            if (fallbackCount) {
+                data.panelCount = fallbackCount;
+                if (!data.panels3Phase && String(data.systemPhase || "").toLowerCase().includes("3 phase")) {
+                    data.panels3Phase = fallbackCount;
+                }
+                if (!data.panels1Phase && String(data.systemPhase || "").toLowerCase().includes("1 phase")) {
+                    data.panels1Phase = fallbackCount;
+                }
+            }
         }
 
         // ==========================================

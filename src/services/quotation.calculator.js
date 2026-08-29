@@ -60,17 +60,24 @@ function calculateQuotation(data) {
         }
 
         const str = String(value).trim();
-        const parsed = Number(str.replace(/,/g, ""));
 
-        if (Number.isFinite(parsed) && parsed > 0) {
+        // Ignore strings containing model/brand/wattage keywords
+        if (/(?:watt|wattage|wp|\bw\b|sunfive|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
+            return 0;
+        }
+
+        const cleanStr = str.replace(/,/g, "");
+        const parsed = Number(cleanStr);
+
+        if (Number.isFinite(parsed) && parsed > 0 && parsed <= 300) {
             return parsed;
         }
 
-        // Match numbers in strings like "10 Panels", "Qty: 12", "15 (WAREE)"
+        // Match numbers in strings like "10 Panels", "Qty: 12", "15 (nos)"
         const match = str.match(/(\d+)\s*(?:nos|panels|panel|pcs)?/i);
         if (match) {
             const extracted = Number(match[1]);
-            if (Number.isFinite(extracted) && extracted > 0 && extracted < 300) {
+            if (Number.isFinite(extracted) && extracted > 0 && extracted <= 300) {
                 return extracted;
             }
         }
@@ -78,17 +85,36 @@ function calculateQuotation(data) {
         return 0;
     }
 
-    const candidateKeys = [
-        "numberOfPanels3Phase",
-        "numberOfPanels1Phase",
-        "panels3Phase",
-        "panels1Phase",
-        "panelCount",
-        "Number of Panels - 3 Phase",
-        "Number of Panels - 1 Phase",
-        "Number of Panels",
-        "No of Panels"
-    ];
+    let candidateKeys = [];
+    if (systemPhase.includes("3 phase")) {
+        candidateKeys = [
+            "panels3Phase",
+            "numberOfPanels3Phase",
+            "Number of Panels - 3 Phase",
+            "Number of Panels (3 Phase)",
+            "panelCount"
+        ];
+    } else if (systemPhase.includes("1 phase")) {
+        candidateKeys = [
+            "panels1Phase",
+            "numberOfPanels1Phase",
+            "Number of Panels - 1 Phase",
+            "Number of Panels (1 Phase)",
+            "panelCount"
+        ];
+    } else {
+        candidateKeys = [
+            "panels3Phase",
+            "panels1Phase",
+            "numberOfPanels3Phase",
+            "numberOfPanels1Phase",
+            "panelCount",
+            "Number of Panels - 3 Phase",
+            "Number of Panels - 1 Phase",
+            "Number of Panels",
+            "No of Panels"
+        ];
+    }
 
     for (const key of candidateKeys) {
         const val = parseNumber(data[key]);
@@ -99,13 +125,44 @@ function calculateQuotation(data) {
     }
 
     if (panelCount <= 0 && data.rawFormValues && typeof data.rawFormValues === "object") {
+        const is3Phase = systemPhase.includes("3 phase");
+
+        const getCountsFromRawVal = (rawVal) => {
+            const candidates = Array.isArray(rawVal) ? rawVal : [rawVal];
+            const validCounts = [];
+            for (const candidate of candidates) {
+                const cnt = parseNumber(candidate);
+                if (cnt > 0) validCounts.push(cnt);
+            }
+            return validCounts;
+        };
+
+        // 1. Search keys with panel/qty keywords
         for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
             const norm = rawKey.toLowerCase();
-            if (norm.includes("number of panels") || norm.includes("panel count") || norm.includes("no of panels")) {
-                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
-                const val = parseNumber(valStr);
-                if (val > 0) {
-                    panelCount = val;
+            const isTypeOrBrandKey = /(?:type|brand|model|watt|location|make|spec|inverter|invertor)/i.test(norm);
+            if (isTypeOrBrandKey) continue;
+
+            const isPanelKey = /(?:panel|qty|quantity)/i.test(norm);
+            if (isPanelKey) {
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    panelCount = (is3Phase && validCounts.length >= 2) ? validCounts[1] : (is3Phase ? validCounts[validCounts.length - 1] : validCounts[0]);
+                    break;
+                }
+            }
+        }
+
+        // 2. Generic fallback across any field whose value parses to 1..300
+        if (panelCount <= 0) {
+            for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
+                const norm = rawKey.toLowerCase();
+                const isNonCountField = /(?:type|brand|model|watt|location|make|spec|inverter|invertor|structure|pincode|mobile|email|price|margin|gst|phase|discom|project|partner|subsidy|customer|dropdown)/i.test(norm);
+                if (isNonCountField) continue;
+
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    panelCount = (is3Phase && validCounts.length >= 2) ? validCounts[1] : (is3Phase ? validCounts[validCounts.length - 1] : validCounts[0]);
                     break;
                 }
             }
