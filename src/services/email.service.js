@@ -1356,6 +1356,15 @@ async function sendQuotationEmail({
                 © ${new Date().getFullYear()} LMAR Renewable Energy
             </p>
 
+            <p style="
+                margin:10px 0 0;
+                color:#b9c8d9;
+                font-size:11px;
+                letter-spacing:0.3px;
+            ">
+                DEVELOPED BY <a href="https://one10technologies.com" target="_blank" style="color:#8fc63f;text-decoration:none;font-weight:bold;">ONE10 TECHNOLOGIES IT</a>
+            </p>
+
         </div>
 
     </div>
