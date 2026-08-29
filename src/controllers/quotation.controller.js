@@ -36,6 +36,21 @@ async function receiveFormSubmission(req, res) {
         }
 
         // ==========================================
+        // LOWERCASE EMAIL ADDRESSES
+        // ==========================================
+        if (data.customerEmail) {
+            data.customerEmail = String(data.customerEmail).trim().toLowerCase();
+        } else if (data["Customer's Email ID"]) {
+            data.customerEmail = String(data["Customer's Email ID"]).trim().toLowerCase();
+        }
+
+        if (data.agentEmail) {
+            data.agentEmail = String(data.agentEmail).trim().toLowerCase();
+        } else if (data["Email Address"]) {
+            data.agentEmail = String(data["Email Address"]).trim().toLowerCase();
+        }
+
+        // ==========================================
         // NORMALIZE PANEL COUNT & FILTER OUT PANEL TYPES
         // ==========================================
 
