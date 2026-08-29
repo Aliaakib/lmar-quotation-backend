@@ -27,16 +27,11 @@ const logoBase64 = fs.readFileSync(
 ).toString("base64");
 const logoDataUri = `data:image/png;base64,${logoBase64}`;
 
-// async function verifyEmailConnection() {
-//     // API-based hai, koi persistent connection verify nahi karni padti
-//     if (!process.env.RESEND_API_KEY) {
-//         throw new Error("RESEND_API_KEY missing in env");
-//     }
-//     console.log("✅ Email API key present, ready to send");
-//     return true;
-// }
-
 async function verifyEmailConnection() {
+    if (process.env.BREVO_API_KEY) {
+        console.log("✅ Brevo API key present, ready to send emails via Brevo HTTP API");
+        return true;
+    }
     try {
         await transporter.verify();
         console.log("✅ Gmail SMTP connection successful");
@@ -748,6 +743,15 @@ Please contact us if you have any questions regarding your solar project.
     Please do not reply directly to this email.
 </div>
 
+<div style="
+    margin-top:12px;
+    font-size:11px;
+    color:#b9c8d9;
+    letter-spacing:0.3px;
+">
+    DEVELOPED BY <a href="https://one10technologies.com" target="_blank" style="color:#8bc34a;text-decoration:none;font-weight:bold;">ONE10 TECHNOLOGIES IT</a>
+</div>
+
 </td>
 
 </tr>
@@ -943,17 +947,17 @@ async function sendQuotationEmail({
         // 1. GET GENERATED PDF BUFFER
         // ==========================================
         const recipientEmail =
-    customerEmail ||
-    data?.customerEmail ||
-    "";
+            customerEmail ||
+            data?.customerEmail ||
+            "";
 
-if (!recipientEmail || !String(recipientEmail).trim()) {
-    throw new Error(
-        "Customer email is missing. Expected customerEmail or data.customerEmail."
-    );
-}
+        if (!recipientEmail || !String(recipientEmail).trim()) {
+            throw new Error(
+                "Customer email is missing. Expected customerEmail or data.customerEmail."
+            );
+        }
 
-console.log("📧 Customer email recipient:", recipientEmail);
+        console.log("📧 Customer email recipient:", recipientEmail);
         const pdfBuffer = quotation.pdfBuffer;
 
         if (!pdfBuffer) {
@@ -1390,7 +1394,7 @@ console.log("📧 Customer email recipient:", recipientEmail);
         };
 
         // ==========================================
-        // 4. SEND EMAIL
+        // 4. SEND EMAIL VIA RESEND OR NODEMAILER
         // ==========================================
 
         const attachmentFileName = quotation?.pdfFileName || (
@@ -1398,6 +1402,54 @@ console.log("📧 Customer email recipient:", recipientEmail);
                 ? `${String(data.customerName).trim()} - ${data.quotationId}.pdf`
                 : `LMAR Quotation - ${data.quotationId}.pdf`
         );
+
+        if (process.env.BREVO_API_KEY) {
+            console.log(`🚀 Sending customer quotation email via Brevo HTTP API to: ${recipientEmail}`);
+
+            const fromName = process.env.EMAIL_FROM_NAME || "LMAR Renewable Energy";
+            const fromEmail = process.env.EMAIL_USER || "lmarrenewableenergy1@gmail.com";
+
+            const brevoPayload = {
+                sender: {
+                    name: fromName,
+                    email: fromEmail,
+                },
+                to: [{ email: recipientEmail }],
+                replyTo: {
+                    email: fromEmail,
+                },
+                subject: mailOptions.subject,
+                htmlContent: mailOptions.html,
+                attachment: [
+                    {
+                        name: attachmentFileName,
+                        content: pdfBuffer.toString("base64"),
+                    },
+                ],
+            };
+
+            const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+                method: "POST",
+                headers: {
+                    "accept": "application/json",
+                    "api-key": process.env.BREVO_API_KEY,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(brevoPayload),
+            });
+
+            const brevoData = await response.json();
+            if (!response.ok) {
+                console.error("❌ Brevo API error sending customer email:", brevoData);
+                throw new Error(brevoData.message || "Brevo API error");
+            }
+
+            console.log(`✅ Customer quotation email sent via Brevo HTTP API: ${brevoData.messageId}`);
+            return {
+                success: true,
+                messageId: brevoData.messageId,
+            };
+        }
 
         const info = await transporter.sendMail({
             from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
@@ -1418,7 +1470,7 @@ console.log("📧 Customer email recipient:", recipientEmail);
             ],
         });
 
-        console.log(`✅ Quotation email sent: ${info.messageId}`);
+        console.log(`✅ Customer quotation email sent via Nodemailer: ${info.messageId}`);
 
         return {
             success: true,
@@ -1859,6 +1911,15 @@ async function sendInternalQuotationEmail({
                                 LMAR Renewable Energy
                             </div>
 
+                            <div style="
+                                margin-top:10px;
+                                font-size:11px;
+                                color:#b9c8d9;
+                                letter-spacing:0.3px;
+                            ">
+                                DEVELOPED BY <a href="https://one10technologies.com" target="_blank" style="color:#8fc63f;text-decoration:none;font-weight:bold;">ONE10 TECHNOLOGIES IT</a>
+                            </div>
+
                         </div>
 
                     </div>
@@ -1887,6 +1948,54 @@ async function sendInternalQuotationEmail({
                 : `LMAR Internal Quotation - ${data.quotationId}.pdf`
         );
 
+        if (process.env.BREVO_API_KEY) {
+            console.log(`🚀 Sending internal quotation email via Brevo HTTP API to agent: ${agentEmail}`);
+
+            const fromName = process.env.EMAIL_FROM_NAME || "LMAR Renewable Energy";
+            const fromEmail = process.env.EMAIL_USER || "lmarrenewableenergy1@gmail.com";
+
+            const brevoPayload = {
+                sender: {
+                    name: fromName,
+                    email: fromEmail,
+                },
+                to: [{ email: agentEmail }],
+                replyTo: {
+                    email: fromEmail,
+                },
+                subject: mailOptions.subject,
+                htmlContent: mailOptions.html,
+                attachment: quotation.pdfBuffer ? [
+                    {
+                        name: internalAttachmentFileName,
+                        content: quotation.pdfBuffer.toString("base64"),
+                    },
+                ] : [],
+            };
+
+            const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+                method: "POST",
+                headers: {
+                    "accept": "application/json",
+                    "api-key": process.env.BREVO_API_KEY,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(brevoPayload),
+            });
+
+            const brevoData = await response.json();
+            if (!response.ok) {
+                console.error("❌ Brevo API error sending internal email:", brevoData);
+                throw new Error(brevoData.message || "Brevo API error");
+            }
+
+            console.log(`✅ Internal quotation email sent via Brevo HTTP API: ${brevoData.messageId}`);
+            return {
+                success: true,
+                messageId: brevoData.messageId,
+            };
+        }
+
         const info = await transporter.sendMail({
             from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
             to: agentEmail,
@@ -1907,7 +2016,7 @@ async function sendInternalQuotationEmail({
             ],
         });
 
-        console.log(`✅ Quotation email sent: ${info.messageId}`);
+        console.log(`✅ Internal quotation email sent via Nodemailer: ${info.messageId}`);
 
         return {
             success: true,
