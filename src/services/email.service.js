@@ -2,15 +2,40 @@ const fs = require("fs");
 const path = require("path");
 const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: String(process.env.EMAIL_SECURE).toLowerCase() === "true",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
+const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com";
+const isGmail = emailHost.includes("gmail");
+
+const transporter = nodemailer.createTransport(
+    isGmail
+        ? {
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
+            tls: {
+                rejectUnauthorized: false,
+            },
+        }
+        : {
+            host: emailHost,
+            port: Number(process.env.EMAIL_PORT || 465),
+            secure: process.env.EMAIL_SECURE !== undefined ? String(process.env.EMAIL_SECURE).toLowerCase() === "true" : true,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
+            tls: {
+                rejectUnauthorized: false,
+            },
+        }
+);
 
 const logoBase64 = fs.readFileSync(
     path.resolve(process.cwd(), "src", "assets", "LMAR-LOGO.png")
