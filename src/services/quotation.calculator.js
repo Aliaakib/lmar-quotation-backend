@@ -85,17 +85,36 @@ function calculateQuotation(data) {
         return 0;
     }
 
-    const candidateKeys = [
-        "numberOfPanels3Phase",
-        "numberOfPanels1Phase",
-        "panels3Phase",
-        "panels1Phase",
-        "panelCount",
-        "Number of Panels - 3 Phase",
-        "Number of Panels - 1 Phase",
-        "Number of Panels",
-        "No of Panels"
-    ];
+    let candidateKeys = [];
+    if (systemPhase.includes("3 phase")) {
+        candidateKeys = [
+            "panels3Phase",
+            "numberOfPanels3Phase",
+            "Number of Panels - 3 Phase",
+            "Number of Panels (3 Phase)",
+            "panelCount"
+        ];
+    } else if (systemPhase.includes("1 phase")) {
+        candidateKeys = [
+            "panels1Phase",
+            "numberOfPanels1Phase",
+            "Number of Panels - 1 Phase",
+            "Number of Panels (1 Phase)",
+            "panelCount"
+        ];
+    } else {
+        candidateKeys = [
+            "panels3Phase",
+            "panels1Phase",
+            "numberOfPanels3Phase",
+            "numberOfPanels1Phase",
+            "panelCount",
+            "Number of Panels - 3 Phase",
+            "Number of Panels - 1 Phase",
+            "Number of Panels",
+            "No of Panels"
+        ];
+    }
 
     for (const key of candidateKeys) {
         const val = parseNumber(data[key]);

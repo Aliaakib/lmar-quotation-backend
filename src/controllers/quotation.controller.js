@@ -191,46 +191,52 @@ async function receiveFormSubmission(req, res) {
 
         if (
             data.systemPhase &&
-            String(data.systemPhase).toLowerCase().includes("1 phase")
-        ) {
-            data.panels1Phase = getFirstValidPanelCount(
-                data.panels1Phase,
-                data.numberOfPanels1Phase,
-                data["Number of Panels - 1 Phase"],
-                data["Number of Panels - 1 Phase *"],
-                data["Number of Panels (1 Phase)"],
-                data.panelCount
-            ) || findPanelCountFromRawValues("1 Phase");
-
-            if (data.panels1Phase) {
-                data.panelCount = data.panels1Phase;
-            }
-        }
-
-        if (
-            data.systemPhase &&
             String(data.systemPhase).toLowerCase().includes("3 phase")
         ) {
-            data.panels3Phase = getFirstValidPanelCount(
+            delete data.panels1Phase;
+            delete data.numberOfPanels1Phase;
+
+            const raw3P = findPanelCountFromRawValues("3 Phase");
+            data.panels3Phase = raw3P || getFirstValidPanelCount(
                 data.panels3Phase,
                 data.numberOfPanels3Phase,
                 data["Number of Panels - 3 Phase"],
                 data["Number of Panels - 3 Phase *"],
-                data["Number of Panels (3 Phase)"],
-                data.panelCount
-            ) || findPanelCountFromRawValues("3 Phase");
+                data["Number of Panels (3 Phase)"]
+            );
 
             if (data.panels3Phase) {
                 data.panelCount = data.panels3Phase;
             }
         }
 
+        if (
+            data.systemPhase &&
+            String(data.systemPhase).toLowerCase().includes("1 phase")
+        ) {
+            delete data.panels3Phase;
+            delete data.numberOfPanels3Phase;
+
+            const raw1P = findPanelCountFromRawValues("1 Phase");
+            data.panels1Phase = raw1P || getFirstValidPanelCount(
+                data.panels1Phase,
+                data.numberOfPanels1Phase,
+                data["Number of Panels - 1 Phase"],
+                data["Number of Panels - 1 Phase *"],
+                data["Number of Panels (1 Phase)"]
+            );
+
+            if (data.panels1Phase) {
+                data.panelCount = data.panels1Phase;
+            }
+        }
+
         if (!data.panelCount) {
-            const fallbackCount = getFirstValidPanelCount(
+            const fallbackCount = findPanelCountFromRawValues(data.systemPhase) || getFirstValidPanelCount(
                 data.panels3Phase,
                 data.panels1Phase,
                 data.panelCount
-            ) || findPanelCountFromRawValues(data.systemPhase);
+            );
 
             if (fallbackCount) {
                 data.panelCount = fallbackCount;
