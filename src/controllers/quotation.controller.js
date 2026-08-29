@@ -517,33 +517,40 @@ async function receiveFormSubmission(req, res) {
             if (
                 String(sendQuotationToCustomer).toLowerCase() === "yes"
             ) {
-                await sendQuotationEmail({
-                    customerEmail: data.customerEmail,
+                try {
+                    await sendQuotationEmail({
+                        customerEmail: data.customerEmail,
 
-                    data: {
-                        customerName: data.customerName,
-                        quotationId: quotationId,
-                        quotationDate: quotationDate,
-                        panelType: data.panelType || "",
-                        inverter:
-                            data.inverter1Phase ||
-                            data.inverter3Phase ||
-                            data.inverter ||
-                            "",
-                    },
+                        data: {
+                            customerName: data.customerName,
+                            quotationId: quotationId,
+                            quotationDate: quotationDate,
+                            panelType: data.panelType || "",
+                            inverter:
+                                data.inverter1Phase ||
+                                data.inverter3Phase ||
+                                data.inverter ||
+                                "",
+                        },
 
-                    calculation,
+                        calculation,
 
-                    quotation: {
-                        pdfBuffer: customerPDF.pdfBuffer,
-                        pdfFileName: customerPDF.name,
-                        pdfUrl: customerPDF.pdfUrl,
-                    },
-                });
+                        quotation: {
+                            pdfBuffer: customerPDF.pdfBuffer,
+                            pdfFileName: customerPDF.name,
+                            pdfUrl: customerPDF.pdfUrl,
+                        },
+                    });
 
-                console.log(
-                    "✅ Customer quotation email sent"
-                );
+                    console.log(
+                        "✅ Customer quotation email sent"
+                    );
+                } catch (customerEmailErr) {
+                    console.error(
+                        "⚠️ Customer quotation email failed, continuing:",
+                        customerEmailErr.message
+                    );
+                }
             }
             customerQuotation.pdfGenerated = true;
 
