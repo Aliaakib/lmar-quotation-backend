@@ -1,14 +1,24 @@
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
+
 const fs = require("fs");
 const path = require("path");
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: String(process.env.EMAIL_SECURE).toLowerCase() === "true",
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: Number(process.env.EMAIL_PORT || 465),
+    secure: process.env.EMAIL_SECURE !== undefined ? String(process.env.EMAIL_SECURE).toLowerCase() === "true" : true,
+    family: 4, // Force IPv4 socket binding to prevent Render ENETUNREACH IPv6 errors
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+    tls: {
+        rejectUnauthorized: false,
     },
 });
 
