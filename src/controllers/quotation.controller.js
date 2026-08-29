@@ -17,34 +17,59 @@ async function receiveFormSubmission(req, res) {
 
     try {
 
-        const data = req.body;
+        const data = req.body || {};
+
+        // Merge raw form values if Apps Script passed rawFormValues object
+        if (data.rawFormValues && typeof data.rawFormValues === "object") {
+            for (const [key, val] of Object.entries(data.rawFormValues)) {
+                const valueStr = Array.isArray(val) ? String(val[0] || "").trim() : String(val || "").trim();
+                if (valueStr !== "") {
+                    if (data[key] === undefined || data[key] === null || String(data[key]).trim() === "") {
+                        data[key] = valueStr;
+                    }
+                }
+            }
+        }
 
         // ==========================================
         // NORMALIZE PANEL COUNT
         // ==========================================
 
+        const getFirstNonEmpty = (...vals) => {
+            for (const v of vals) {
+                if (v !== undefined && v !== null && String(v).trim() !== "") {
+                    return String(v).trim();
+                }
+            }
+            return "";
+        };
+
         if (
             data.systemPhase &&
             String(data.systemPhase).toLowerCase().includes("1 phase")
         ) {
-            data.panels1Phase =
-                data.panels1Phase ||
-                data.numberOfPanels1Phase ||
-                data["Number of Panels - 1 Phase"] ||
-                data.panelCount ||
-                "";
+            data.panels1Phase = getFirstNonEmpty(
+                data.panels1Phase,
+                data.numberOfPanels1Phase,
+                data["Number of Panels - 1 Phase"],
+                data["Number of Panels - 1 Phase *"],
+                data["Number of Panels (1 Phase)"],
+                data.panelCount
+            );
         }
 
         if (
             data.systemPhase &&
             String(data.systemPhase).toLowerCase().includes("3 phase")
         ) {
-            data.panels3Phase =
-                data.panels3Phase ||
-                data.numberOfPanels3Phase ||
-                data["Number of Panels - 3 Phase"] ||
-                data.panelCount ||
-                "";
+            data.panels3Phase = getFirstNonEmpty(
+                data.panels3Phase,
+                data.numberOfPanels3Phase,
+                data["Number of Panels - 3 Phase"],
+                data["Number of Panels - 3 Phase *"],
+                data["Number of Panels (3 Phase)"],
+                data.panelCount
+            );
         }
 
         // ==========================================
@@ -219,6 +244,9 @@ async function receiveFormSubmission(req, res) {
 
             BASIC_PRICE_AFTER_DISCOUNT:
                 calculation.basicPriceAfterDiscount.toFixed(2),
+
+            GST_PERCENTAGE:
+                calculation.gstPercentage,
 
             GST_AMOUNT:
                 calculation.gstAmount.toFixed(2),
@@ -398,17 +426,31 @@ async function receiveFormSubmission(req, res) {
                 DISCOM:
                     data.discom || "",
 
+                PANEL_TYPE:
+                    data.panelType ||
+                    calculation.panelType ||
+                    "",
+
                 RATE_PER_KW:
                     calculation.ratePerKW.toFixed(2),
 
                 TOTAL_COST:
                     calculation.projectValue.toFixed(2),
 
+                DISCOUNT_PERCENTAGE:
+                    calculation.discountPercentage,
+
                 DISCOUNT_AMOUNT:
                     calculation.discountAmount.toFixed(2),
 
                 BASIC_PRICE_AFTER_DISCOUNT:
                     calculation.basicPriceAfterDiscount.toFixed(2),
+
+                GST_PERCENTAGE:
+                    calculation.gstPercentage,
+
+                GST_AMOUNT:
+                    calculation.gstAmount.toFixed(2),
 
                 FINAL_AMOUNT:
                     calculation.finalAmount.toFixed(2),

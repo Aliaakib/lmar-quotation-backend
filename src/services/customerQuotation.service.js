@@ -111,7 +111,7 @@ function generateCustomerQuotationHTML(data, calculation) {
             calculation.projectValue || 0;
 
         const discountPercentage =
-            calculation.discountPercentage || 5;
+            calculation.discountPercentage ?? 0;
 
         const discountAmount =
             calculation.discountAmount || 0;
@@ -120,7 +120,7 @@ function generateCustomerQuotationHTML(data, calculation) {
             calculation.basicPriceAfterDiscount || 0;
 
         const gstPercentage =
-            calculation.gstPercentage || 18;
+            calculation.gstPercentage ?? 5;
 
         const gstAmount =
             calculation.gstAmount || 0;

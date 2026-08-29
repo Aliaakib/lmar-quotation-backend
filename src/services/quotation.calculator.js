@@ -46,32 +46,120 @@ function calculateQuotation(data) {
     console.log("All form keys:", Object.keys(data));
     console.log("Selected Inverter:", inverter);
 
+    // ==========================================
+    // PANEL COUNT - ROBUST FORM VALUE DETECTION
+    // ==========================================
+
+    function parseNumber(value) {
+
+        if (
+            value === undefined ||
+            value === null ||
+            String(value).trim() === ""
+        ) {
+            return 0;
+        }
+
+        const parsed = Number(
+            String(value)
+                .replace(/,/g, "")
+                .trim()
+        );
+
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+
+    // let panelCount = 0;
+
+
+    // First try according to selected phase
     if (systemPhase.includes("1 phase")) {
 
-        panelCount = Number(
-            data.panels1Phase || 0
-        );
+        panelCount =
+            parseNumber(data.panels1Phase) ||
+            parseNumber(data.panelCount);
 
-    } else if (systemPhase.includes("3 phase")) {
-
-        panelCount = Number(
-            data.panels3Phase || 0
-        );
-
-    } else {
-
-        panelCount = Number(
-            data.panels1Phase ||
-            data.panels3Phase ||
-            data.panelCount ||
-            0
-        );
     }
+
+    else if (systemPhase.includes("3 phase")) {
+
+        panelCount =
+            parseNumber(data.panels3Phase) ||
+            parseNumber(data.panelCount);
+
+    }
+
+
+    // If phase is missing OR above failed,
+    // try every known panel field
+    if (panelCount <= 0) {
+
+        panelCount =
+            parseNumber(data.panels1Phase) ||
+            parseNumber(data.panels3Phase) ||
+            parseNumber(data.numberOfPanels1Phase) ||
+            parseNumber(data.numberOfPanels3Phase) ||
+            parseNumber(data.panelCount);
+
+    }
+
+
+    // Last fallback: search keys dynamically for any non-zero number
+    if (panelCount <= 0) {
+
+        const panelKey = Object.keys(data).find(key => {
+
+            const normalized = String(key)
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, "");
+
+            const val = parseNumber(data[key]);
+
+            return val > 0 && (
+                normalized.includes("numberofpanel") ||
+                normalized.includes("panelcount") ||
+                normalized.includes("panels1phase") ||
+                normalized.includes("panels3phase") ||
+                normalized.includes("panel") ||
+                normalized.includes("panels")
+            );
+
+        });
+
+        if (panelKey) {
+
+            panelCount = parseNumber(
+                data[panelKey]
+            );
+
+        }
+
+    }
+
+
+    console.log("=================================");
+    console.log("PANEL COUNT DEBUG");
+    console.log("System Phase:", data.systemPhase);
+    console.log("Panels 1 Phase:", data.panels1Phase);
+    console.log("Panels 3 Phase:", data.panels3Phase);
+    console.log("Panel Count:", data.panelCount);
+    console.log("FINAL PANEL COUNT:", panelCount);
+    console.log("=================================");
+
 
     if (!panelCount || panelCount <= 0) {
-        throw new Error("Number of panels is required");
-    }
 
+        throw new Error(
+            "Number of panels is required. Received: " +
+            JSON.stringify({
+                systemPhase: data.systemPhase,
+                panels1Phase: data.panels1Phase,
+                panels3Phase: data.panels3Phase,
+                panelCount: data.panelCount
+            })
+        );
+    }
 
     // ==========================================
     // 2. SYSTEM CAPACITY
@@ -161,14 +249,38 @@ function calculateQuotation(data) {
     // 9. DISCOUNT (form se aayega, hardcoded nahi)
     // ==========================================
 
-    const discountAmount = Number(
-        data.discountAmount ??
-        data.discount ??
-        0
-    );
+    let rawDiscountAmount = getFormValueByKey(data, [
+        "discountAmount",
+        "discount",
+        "Discount Amount",
+        "Discount Amount (₹)",
+        "Discount (₹)",
+        "Discount",
+        "discount_amount"
+    ]);
 
-    if (isNaN(discountAmount) || discountAmount < 0) {
-        throw new Error("Discount Amount must be 0 or greater");
+    if (!rawDiscountAmount) {
+        const matchingKey = Object.keys(data).find(k =>
+            k.toLowerCase().includes("discount")
+        );
+        if (matchingKey && data[matchingKey] !== undefined && data[matchingKey] !== null) {
+            rawDiscountAmount = String(data[matchingKey]).trim();
+        }
+    }
+
+    let discountAmount = 0;
+
+    if (rawDiscountAmount !== "" && rawDiscountAmount !== null && rawDiscountAmount !== undefined) {
+        const parsedDiscount = Number(
+            String(rawDiscountAmount)
+                .replace(/₹/g, "")
+                .replace(/,/g, "")
+                .trim()
+        );
+
+        if (Number.isFinite(parsedDiscount) && parsedDiscount >= 0) {
+            discountAmount = parsedDiscount;
+        }
     }
 
     const discountPercentage =
@@ -179,11 +291,53 @@ function calculateQuotation(data) {
     const basicPriceAfterDiscount =
         projectValue -
         discountAmount;
+
+    console.log("=================================");
+    console.log("DISCOUNT DEBUG");
+    console.log("Raw Discount Input:", rawDiscountAmount);
+    console.log("Calculated discountAmount:", discountAmount);
+    console.log("discountPercentage:", discountPercentage);
+    console.log("basicPriceAfterDiscount:", basicPriceAfterDiscount);
+    console.log("=================================");
     // ==========================================
     // 10. GST
     // ==========================================
 
-    const gstPercentage = 5;
+    const rawGstPercentage = getFormValueByKey(data, [
+        "gstPercentage",
+        "gstPercent",
+        "gstRate",
+        "GST (%) Percentage",
+        "GST (%)",
+        "GST %",
+        "GST Percentage",
+        "GST",
+        "Enter GST % percentage"
+    ]);
+
+    let gstPercentage = 5;
+
+    if (
+        rawGstPercentage !== "" &&
+        rawGstPercentage !== null &&
+        rawGstPercentage !== undefined
+    ) {
+
+        const parsedGST = Number(
+            String(rawGstPercentage)
+                .replace(/%/g, "")
+                .replace(/,/g, "")
+                .trim()
+        );
+
+        if (
+            Number.isFinite(parsedGST) &&
+            parsedGST >= 0
+        ) {
+            gstPercentage = parsedGST;
+        }
+    }
+
 
     const gstAmount =
         basicPriceAfterDiscount *
@@ -193,6 +347,14 @@ function calculateQuotation(data) {
         basicPriceAfterDiscount +
         gstAmount;
 
+
+    console.log("=================================");
+    console.log("GST DEBUG");
+    console.log("Raw GST:", rawGstPercentage);
+    console.log("GST %:", gstPercentage);
+    console.log("GST Amount:", gstAmount);
+    console.log("Final Amount:", finalAmount);
+    console.log("=================================");
 
     // ==========================================
     // 11. SUBSIDY
@@ -273,6 +435,7 @@ function calculateQuotation(data) {
         panelWatt,
         panelCount,
         totalWatt,
+        panelType: data.panelType || "",
         systemSize,
         inverter,
         companyRatePerKW,
