@@ -60,17 +60,24 @@ function calculateQuotation(data) {
         }
 
         const str = String(value).trim();
-        const parsed = Number(str.replace(/,/g, ""));
 
-        if (Number.isFinite(parsed) && parsed > 0) {
+        // Ignore strings containing model/brand/wattage keywords
+        if (/(?:watt|wattage|wp|\bw\b|sunfive|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
+            return 0;
+        }
+
+        const cleanStr = str.replace(/,/g, "");
+        const parsed = Number(cleanStr);
+
+        if (Number.isFinite(parsed) && parsed > 0 && parsed <= 300) {
             return parsed;
         }
 
-        // Match numbers in strings like "10 Panels", "Qty: 12", "15 (WAREE)"
+        // Match numbers in strings like "10 Panels", "Qty: 12", "15 (nos)"
         const match = str.match(/(\d+)\s*(?:nos|panels|panel|pcs)?/i);
         if (match) {
             const extracted = Number(match[1]);
-            if (Number.isFinite(extracted) && extracted > 0 && extracted < 300) {
+            if (Number.isFinite(extracted) && extracted > 0 && extracted <= 300) {
                 return extracted;
             }
         }
@@ -101,7 +108,11 @@ function calculateQuotation(data) {
     if (panelCount <= 0 && data.rawFormValues && typeof data.rawFormValues === "object") {
         for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
             const norm = rawKey.toLowerCase();
-            if (norm.includes("number of panels") || norm.includes("panel count") || norm.includes("no of panels")) {
+            const isTypeOrBrandKey = /(?:type|brand|model|watt|location|make|spec|inverter|invertor)/i.test(norm);
+            if (isTypeOrBrandKey) continue;
+
+            const isPanelKey = /(?:panel|qty|quantity)/i.test(norm);
+            if (isPanelKey) {
                 const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
                 const val = parseNumber(valStr);
                 if (val > 0) {
