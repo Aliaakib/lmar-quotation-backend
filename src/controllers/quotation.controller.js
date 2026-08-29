@@ -23,10 +23,37 @@ async function receiveFormSubmission(req, res) {
 
         const data = req.body || {};
 
+        // Helper to select correct item from array when Google Form question titles are identical
+        const selectFormValueForPhase = (val, phaseStr) => {
+            if (!Array.isArray(val)) {
+                return String(val || "").trim();
+            }
+
+            const is3P = phaseStr && String(phaseStr).toLowerCase().includes("3 phase");
+            const is1P = phaseStr && String(phaseStr).toLowerCase().includes("1 phase");
+
+            if (is3P && val.length >= 2) {
+                const secondItem = String(val[1] || "").trim();
+                if (secondItem !== "") return secondItem;
+            }
+
+            if (is1P && val.length >= 1) {
+                const firstItem = String(val[0] || "").trim();
+                if (firstItem !== "") return firstItem;
+            }
+
+            // Fallback: return last non-empty item for 3 phase, first non-empty item for 1 phase
+            for (let i = val.length - 1; i >= 0; i--) {
+                const str = String(val[i] || "").trim();
+                if (str !== "") return str;
+            }
+            return "";
+        };
+
         // Merge raw form values if Apps Script passed rawFormValues object
         if (data.rawFormValues && typeof data.rawFormValues === "object") {
             for (const [key, val] of Object.entries(data.rawFormValues)) {
-                const valueStr = Array.isArray(val) ? String(val[0] || "").trim() : String(val || "").trim();
+                const valueStr = selectFormValueForPhase(val, data.systemPhase);
                 if (valueStr !== "") {
                     if (data[key] === undefined || data[key] === null || String(data[key]).trim() === "") {
                         data[key] = valueStr;
@@ -97,6 +124,17 @@ async function receiveFormSubmission(req, res) {
             const is3Phase = phaseStr && phaseStr.toLowerCase().includes("3 phase");
             const is1Phase = phaseStr && phaseStr.toLowerCase().includes("1 phase");
 
+            // Helper to get all valid candidate counts from a rawVal (string or array)
+            const getCountsFromRawVal = (rawVal) => {
+                const candidates = Array.isArray(rawVal) ? rawVal : [rawVal];
+                const validCounts = [];
+                for (const candidate of candidates) {
+                    const cnt = parseValidPanelCount(candidate);
+                    if (cnt > 0) validCounts.push(cnt);
+                }
+                return validCounts;
+            };
+
             // 1. Phase-aware search
             for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
                 const normKey = rawKey.toLowerCase();
@@ -109,10 +147,11 @@ async function receiveFormSubmission(req, res) {
                 if (is3Phase && normKey.includes("1 phase") && !normKey.includes("3 phase")) continue;
                 if (is1Phase && normKey.includes("3 phase") && !normKey.includes("1 phase")) continue;
 
-                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
-                const count = parseValidPanelCount(valStr);
-                if (count > 0) {
-                    return String(count);
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    if (is3Phase && validCounts.length >= 2) return String(validCounts[1]);
+                    if (is3Phase) return String(validCounts[validCounts.length - 1]);
+                    return String(validCounts[0]);
                 }
             }
 
@@ -125,10 +164,11 @@ async function receiveFormSubmission(req, res) {
                 const isPanelKey = /(?:panel|qty|quantity)/i.test(normKey);
                 if (!isPanelKey) continue;
 
-                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
-                const count = parseValidPanelCount(valStr);
-                if (count > 0) {
-                    return String(count);
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    if (is3Phase && validCounts.length >= 2) return String(validCounts[1]);
+                    if (is3Phase) return String(validCounts[validCounts.length - 1]);
+                    return String(validCounts[0]);
                 }
             }
 
@@ -138,10 +178,11 @@ async function receiveFormSubmission(req, res) {
                 const isNonCountField = /(?:type|brand|model|watt|location|make|spec|inverter|invertor|structure|pincode|mobile|email|price|margin|gst|phase|discom|project|partner|subsidy|customer|dropdown)/i.test(normKey);
                 if (isNonCountField) continue;
 
-                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
-                const count = parseValidPanelCount(valStr);
-                if (count > 0) {
-                    return String(count);
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    if (is3Phase && validCounts.length >= 2) return String(validCounts[1]);
+                    if (is3Phase) return String(validCounts[validCounts.length - 1]);
+                    return String(validCounts[0]);
                 }
             }
 

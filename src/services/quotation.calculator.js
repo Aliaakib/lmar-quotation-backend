@@ -106,6 +106,18 @@ function calculateQuotation(data) {
     }
 
     if (panelCount <= 0 && data.rawFormValues && typeof data.rawFormValues === "object") {
+        const is3Phase = systemPhase.includes("3 phase");
+
+        const getCountsFromRawVal = (rawVal) => {
+            const candidates = Array.isArray(rawVal) ? rawVal : [rawVal];
+            const validCounts = [];
+            for (const candidate of candidates) {
+                const cnt = parseNumber(candidate);
+                if (cnt > 0) validCounts.push(cnt);
+            }
+            return validCounts;
+        };
+
         // 1. Search keys with panel/qty keywords
         for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
             const norm = rawKey.toLowerCase();
@@ -114,10 +126,9 @@ function calculateQuotation(data) {
 
             const isPanelKey = /(?:panel|qty|quantity)/i.test(norm);
             if (isPanelKey) {
-                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
-                const val = parseNumber(valStr);
-                if (val > 0) {
-                    panelCount = val;
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    panelCount = (is3Phase && validCounts.length >= 2) ? validCounts[1] : (is3Phase ? validCounts[validCounts.length - 1] : validCounts[0]);
                     break;
                 }
             }
@@ -130,10 +141,9 @@ function calculateQuotation(data) {
                 const isNonCountField = /(?:type|brand|model|watt|location|make|spec|inverter|invertor|structure|pincode|mobile|email|price|margin|gst|phase|discom|project|partner|subsidy|customer|dropdown)/i.test(norm);
                 if (isNonCountField) continue;
 
-                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
-                const val = parseNumber(valStr);
-                if (val > 0) {
-                    panelCount = val;
+                const validCounts = getCountsFromRawVal(rawVal);
+                if (validCounts.length > 0) {
+                    panelCount = (is3Phase && validCounts.length >= 2) ? validCounts[1] : (is3Phase ? validCounts[validCounts.length - 1] : validCounts[0]);
                     break;
                 }
             }
