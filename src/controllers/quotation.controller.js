@@ -101,7 +101,7 @@ async function receiveFormSubmission(req, res) {
                 }
             }
 
-            // 2. Generic fallback search across all raw values
+            // 2. Generic panel key search across all raw values
             for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
                 const normKey = rawKey.toLowerCase();
                 const isTypeOrBrandKey = /(?:type|brand|model|watt|location|make|spec|inverter|invertor)/i.test(normKey);
@@ -109,6 +109,19 @@ async function receiveFormSubmission(req, res) {
 
                 const isPanelKey = /(?:panel|qty|quantity)/i.test(normKey);
                 if (!isPanelKey) continue;
+
+                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
+                const count = parseValidPanelCount(valStr);
+                if (count > 0) {
+                    return String(count);
+                }
+            }
+
+            // 3. Fallback search across ANY raw form field whose value parses to 1..300
+            for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
+                const normKey = rawKey.toLowerCase();
+                const isNonCountField = /(?:type|brand|model|watt|location|make|spec|inverter|invertor|structure|pincode|mobile|email|price|margin|gst|phase|discom|project|partner|subsidy|customer|dropdown)/i.test(normKey);
+                if (isNonCountField) continue;
 
                 const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
                 const count = parseValidPanelCount(valStr);

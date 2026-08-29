@@ -106,6 +106,7 @@ function calculateQuotation(data) {
     }
 
     if (panelCount <= 0 && data.rawFormValues && typeof data.rawFormValues === "object") {
+        // 1. Search keys with panel/qty keywords
         for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
             const norm = rawKey.toLowerCase();
             const isTypeOrBrandKey = /(?:type|brand|model|watt|location|make|spec|inverter|invertor)/i.test(norm);
@@ -113,6 +114,22 @@ function calculateQuotation(data) {
 
             const isPanelKey = /(?:panel|qty|quantity)/i.test(norm);
             if (isPanelKey) {
+                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
+                const val = parseNumber(valStr);
+                if (val > 0) {
+                    panelCount = val;
+                    break;
+                }
+            }
+        }
+
+        // 2. Generic fallback across any field whose value parses to 1..300
+        if (panelCount <= 0) {
+            for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
+                const norm = rawKey.toLowerCase();
+                const isNonCountField = /(?:type|brand|model|watt|location|make|spec|inverter|invertor|structure|pincode|mobile|email|price|margin|gst|phase|discom|project|partner|subsidy|customer|dropdown)/i.test(norm);
+                if (isNonCountField) continue;
+
                 const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
                 const val = parseNumber(valStr);
                 if (val > 0) {
