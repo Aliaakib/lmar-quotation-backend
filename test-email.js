@@ -3,7 +3,7 @@ require("dotenv").config();
 const {
     sendQuotationEmail,
     verifyEmailConnection,
-} = require("./src/services/email"); // apna actual path daalo
+} = require("././src/services/email.service"); // apna actual path daalo
 
 const fs = require("fs");
 const path = require("path");
@@ -18,7 +18,7 @@ async function runTest() {
         );
 
         const result = await sendQuotationEmail({
-            customerEmail: "apna-khud-ka-email@gmail.com", // yaha apna real email daalo
+            customerEmail: "lmarrenewableenergy1@gmail.com",
             data: {
                 customerName: "Test Customer",
                 quotationId: "TEST-001",
