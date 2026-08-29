@@ -51,7 +51,6 @@ function calculateQuotation(data) {
     // ==========================================
 
     function parseNumber(value) {
-
         if (
             value === undefined ||
             value === null ||
@@ -60,81 +59,57 @@ function calculateQuotation(data) {
             return 0;
         }
 
-        const parsed = Number(
-            String(value)
-                .replace(/,/g, "")
-                .trim()
-        );
+        const str = String(value).trim();
+        const parsed = Number(str.replace(/,/g, ""));
 
-        return Number.isFinite(parsed) ? parsed : 0;
-    }
-
-
-    // let panelCount = 0;
-
-
-    // First try according to selected phase
-    if (systemPhase.includes("1 phase")) {
-
-        panelCount =
-            parseNumber(data.panels1Phase) ||
-            parseNumber(data.panelCount);
-
-    }
-
-    else if (systemPhase.includes("3 phase")) {
-
-        panelCount =
-            parseNumber(data.panels3Phase) ||
-            parseNumber(data.panelCount);
-
-    }
-
-
-    // If phase is missing OR above failed,
-    // try every known panel field
-    if (panelCount <= 0) {
-
-        panelCount =
-            parseNumber(data.panels1Phase) ||
-            parseNumber(data.panels3Phase) ||
-            parseNumber(data.numberOfPanels1Phase) ||
-            parseNumber(data.numberOfPanels3Phase) ||
-            parseNumber(data.panelCount);
-
-    }
-
-
-    // Last fallback: search keys dynamically for any non-zero number
-    if (panelCount <= 0) {
-
-        const panelKey = Object.keys(data).find(key => {
-
-            const normalized = String(key)
-                .toLowerCase()
-                .replace(/[^a-z0-9]/g, "");
-
-            const val = parseNumber(data[key]);
-
-            return val > 0 && (
-                normalized.includes("numberofpanel") ||
-                normalized.includes("panelcount") ||
-                normalized.includes("panels1phase") ||
-                normalized.includes("panels3phase") ||
-                normalized.includes("panel") ||
-                normalized.includes("panels")
-            );
-
-        });
-
-        if (panelKey) {
-
-            panelCount = parseNumber(
-                data[panelKey]
-            );
-
+        if (Number.isFinite(parsed) && parsed > 0) {
+            return parsed;
         }
 
+        // Match numbers in strings like "10 Panels", "Qty: 12", "15 (WAREE)"
+        const match = str.match(/(\d+)\s*(?:nos|panels|panel|pcs)?/i);
+        if (match) {
+            const extracted = Number(match[1]);
+            if (Number.isFinite(extracted) && extracted > 0 && extracted < 300) {
+                return extracted;
+            }
+        }
+
+        return 0;
+    }
+
+    const candidateKeys = [
+        "numberOfPanels3Phase",
+        "numberOfPanels1Phase",
+        "panels3Phase",
+        "panels1Phase",
+        "panelCount",
+        "Number of Panels - 3 Phase",
+        "Number of Panels - 1 Phase",
+        "Number of Panels",
+        "No of Panels"
+    ];
+
+    for (const key of candidateKeys) {
+        const val = parseNumber(data[key]);
+        if (val > 0) {
+            panelCount = val;
+            break;
+        }
+    }
+
+    if (panelCount <= 0 && data.rawFormValues && typeof data.rawFormValues === "object") {
+        for (const [rawKey, rawVal] of Object.entries(data.rawFormValues)) {
+            const norm = rawKey.toLowerCase();
+            if (norm.includes("number of panels") || norm.includes("panel count") || norm.includes("no of panels")) {
+                const valStr = Array.isArray(rawVal) ? rawVal[0] : rawVal;
+                const val = parseNumber(valStr);
+                if (val > 0) {
+                    panelCount = val;
+                    break;
+                }
+            }
+        }
     }
 
 
