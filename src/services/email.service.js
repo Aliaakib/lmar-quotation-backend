@@ -4,10 +4,6 @@ dns.setDefaultResultOrder("ipv4first");
 const fs = require("fs");
 const path = require("path");
 const nodemailer = require("nodemailer");
-const { Resend } = require("resend");
-
-const resendApiKey = process.env.RESEND_API_KEY;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || "smtp.gmail.com",
@@ -32,8 +28,8 @@ const logoBase64 = fs.readFileSync(
 const logoDataUri = `data:image/png;base64,${logoBase64}`;
 
 async function verifyEmailConnection() {
-    if (process.env.RESEND_API_KEY && resend) {
-        console.log("✅ Resend API key present, ready to send emails via Resend HTTP API");
+    if (process.env.BREVO_API_KEY) {
+        console.log("✅ Brevo API key present, ready to send emails via Brevo HTTP API");
         return true;
     }
     try {
@@ -1398,39 +1394,51 @@ async function sendQuotationEmail({
                 : `LMAR Quotation - ${data.quotationId}.pdf`
         );
 
-        if (process.env.RESEND_API_KEY && resend) {
-            console.log(`🚀 Sending customer quotation email via Resend API to: ${recipientEmail}`);
+        if (process.env.BREVO_API_KEY) {
+            console.log(`🚀 Sending customer quotation email via Brevo HTTP API to: ${recipientEmail}`);
 
             const fromName = process.env.EMAIL_FROM_NAME || "LMAR Renewable Energy";
-            let fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-            if (fromEmail.includes("@gmail.com") || fromEmail.includes("@yahoo.com") || fromEmail.includes("@hotmail.com")) {
-                fromEmail = "onboarding@resend.dev";
-            }
-            const replyToEmail = process.env.EMAIL_USER || "lmarrenewableenergy1@gmail.com";
+            const fromEmail = process.env.EMAIL_USER || "lmarrenewableenergy1@gmail.com";
 
-            const resendResponse = await resend.emails.send({
-                from: `${fromName} <${fromEmail}>`,
-                to: [recipientEmail],
-                reply_to: replyToEmail,
+            const brevoPayload = {
+                sender: {
+                    name: fromName,
+                    email: fromEmail,
+                },
+                to: [{ email: recipientEmail }],
+                replyTo: {
+                    email: fromEmail,
+                },
                 subject: mailOptions.subject,
-                html: mailOptions.html,
-                attachments: [
+                htmlContent: mailOptions.html,
+                attachment: [
                     {
-                        filename: attachmentFileName,
+                        name: attachmentFileName,
                         content: pdfBuffer.toString("base64"),
                     },
                 ],
+            };
+
+            const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+                method: "POST",
+                headers: {
+                    "accept": "application/json",
+                    "api-key": process.env.BREVO_API_KEY,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(brevoPayload),
             });
 
-            if (resendResponse.error) {
-                console.error("❌ Resend API error sending customer email:", resendResponse.error);
-                throw new Error(resendResponse.error.message || "Resend API error");
+            const brevoData = await response.json();
+            if (!response.ok) {
+                console.error("❌ Brevo API error sending customer email:", brevoData);
+                throw new Error(brevoData.message || "Brevo API error");
             }
 
-            console.log(`✅ Customer quotation email sent via Resend API: ${resendResponse.data?.id}`);
+            console.log(`✅ Customer quotation email sent via Brevo HTTP API: ${brevoData.messageId}`);
             return {
                 success: true,
-                messageId: resendResponse.data?.id,
+                messageId: brevoData.messageId,
             };
         }
 
@@ -1922,39 +1930,51 @@ async function sendInternalQuotationEmail({
                 : `LMAR Internal Quotation - ${data.quotationId}.pdf`
         );
 
-        if (process.env.RESEND_API_KEY && resend) {
-            console.log(`🚀 Sending internal quotation email via Resend API to agent: ${agentEmail}`);
+        if (process.env.BREVO_API_KEY) {
+            console.log(`🚀 Sending internal quotation email via Brevo HTTP API to agent: ${agentEmail}`);
 
             const fromName = process.env.EMAIL_FROM_NAME || "LMAR Renewable Energy";
-            let fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-            if (fromEmail.includes("@gmail.com") || fromEmail.includes("@yahoo.com") || fromEmail.includes("@hotmail.com")) {
-                fromEmail = "onboarding@resend.dev";
-            }
-            const replyToEmail = process.env.EMAIL_USER || "lmarrenewableenergy1@gmail.com";
+            const fromEmail = process.env.EMAIL_USER || "lmarrenewableenergy1@gmail.com";
 
-            const resendResponse = await resend.emails.send({
-                from: `${fromName} <${fromEmail}>`,
-                to: [agentEmail],
-                reply_to: replyToEmail,
+            const brevoPayload = {
+                sender: {
+                    name: fromName,
+                    email: fromEmail,
+                },
+                to: [{ email: agentEmail }],
+                replyTo: {
+                    email: fromEmail,
+                },
                 subject: mailOptions.subject,
-                html: mailOptions.html,
-                attachments: quotation.pdfBuffer ? [
+                htmlContent: mailOptions.html,
+                attachment: quotation.pdfBuffer ? [
                     {
-                        filename: internalAttachmentFileName,
+                        name: internalAttachmentFileName,
                         content: quotation.pdfBuffer.toString("base64"),
                     },
                 ] : [],
+            };
+
+            const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+                method: "POST",
+                headers: {
+                    "accept": "application/json",
+                    "api-key": process.env.BREVO_API_KEY,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(brevoPayload),
             });
 
-            if (resendResponse.error) {
-                console.error("❌ Resend API error sending internal email:", resendResponse.error);
-                throw new Error(resendResponse.error.message || "Resend API error");
+            const brevoData = await response.json();
+            if (!response.ok) {
+                console.error("❌ Brevo API error sending internal email:", brevoData);
+                throw new Error(brevoData.message || "Brevo API error");
             }
 
-            console.log(`✅ Internal quotation email sent via Resend API: ${resendResponse.data?.id}`);
+            console.log(`✅ Internal quotation email sent via Brevo HTTP API: ${brevoData.messageId}`);
             return {
                 success: true,
-                messageId: resendResponse.data?.id,
+                messageId: brevoData.messageId,
             };
         }
 
