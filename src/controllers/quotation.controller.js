@@ -193,13 +193,7 @@ async function receiveFormSubmission(req, res) {
         // 6. QUOTATION ID
         // ==========================================
 
-        const isValidNewFormat =
-            data.quotationId &&
-            /^LMAR-\d{6}-\d{3}$/.test(String(data.quotationId).trim());
-
-        const quotationId = isValidNewFormat
-            ? String(data.quotationId).trim()
-            : generateQuotationId();
+        const quotationId = await generateQuotationId();
 
         // ==========================================
         // 7. QUOTATION DATE

@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { drive } = require("../config/google");
 
 const counterFilePath = path.resolve(__dirname, "../data/quotationCounter.json");
 
@@ -32,53 +33,77 @@ function getFormattedDatePrefix(dateObj = new Date()) {
 /**
  * Generates next sequential Quotation ID in format: LMAR-YYMMDD-XXX
  * Sequence resets to 001 on a new date.
+ * Checks both local storage and Google Drive to guarantee uniqueness across server restarts.
  */
-function generateQuotationId() {
+async function generateQuotationId() {
+    const todayStr = getFormattedDatePrefix(new Date());
+    let maxDriveSeq = 0;
+
+    // 1. Query Google Drive for highest sequence number created today
+    try {
+        if (drive && drive.files) {
+            const folderId = process.env.GOOGLE_QUOTATION_PDF_FOLDER_ID;
+            let q = `name contains 'LMAR-${todayStr}-' and trashed = false`;
+            if (folderId) {
+                q = `'${folderId}' in parents and ${q}`;
+            }
+
+            const res = await drive.files.list({
+                q: q,
+                fields: "files(name)",
+                pageSize: 100
+            });
+
+            if (res.data && res.data.files) {
+                for (const file of res.data.files) {
+                    const match = file.name.match(/LMAR-\d{6}-(\d{3})/);
+                    if (match && match[1]) {
+                        const num = parseInt(match[1], 10);
+                        if (num > maxDriveSeq) {
+                            maxDriveSeq = num;
+                        }
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.warn("⚠️ Warning: could not check Google Drive for highest sequence:", err.message);
+    }
+
+    // 2. Read local file counter
+    let localCounter = 0;
     try {
         const dir = path.dirname(counterFilePath);
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
 
-        const todayStr = getFormattedDatePrefix(new Date());
-
-        let state = {
-            date: todayStr,
-            counter: 0
-        };
-
         if (fs.existsSync(counterFilePath)) {
-            try {
-                const raw = fs.readFileSync(counterFilePath, "utf8");
-                const parsed = JSON.parse(raw);
-                if (parsed && typeof parsed === "object" && parsed.date && typeof parsed.counter === "number") {
-                    state = parsed;
-                }
-            } catch (e) {
-                console.error("⚠️ Warning: could not parse quotationCounter.json, resetting counter.", e.message);
+            const raw = fs.readFileSync(counterFilePath, "utf8");
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object" && parsed.date === todayStr && typeof parsed.counter === "number") {
+                localCounter = parsed.counter;
             }
         }
-
-        if (state.date !== todayStr) {
-            state.date = todayStr;
-            state.counter = 1;
-        } else {
-            state.counter = (Number(state.counter) || 0) + 1;
-        }
-
-        fs.writeFileSync(counterFilePath, JSON.stringify(state, null, 2), "utf8");
-
-        const sequenceStr = String(state.counter).padStart(3, "0");
-        const quotationId = `LMAR-${todayStr}-${sequenceStr}`;
-
-        console.log(`✅ Generated Quotation ID: ${quotationId}`);
-        return quotationId;
-
-    } catch (error) {
-        console.error("❌ Error generating Quotation ID:", error.message);
-        const todayStr = getFormattedDatePrefix(new Date());
-        return `LMAR-${todayStr}-001`;
+    } catch (e) {
+        console.warn("⚠️ Could not read quotationCounter.json:", e.message);
     }
+
+    // 3. Compute next sequence
+    const nextSeq = Math.max(localCounter, maxDriveSeq) + 1;
+
+    // 4. Save updated counter back to local disk
+    try {
+        fs.writeFileSync(counterFilePath, JSON.stringify({ date: todayStr, counter: nextSeq }, null, 2), "utf8");
+    } catch (e) {
+        console.warn("⚠️ Could not write quotationCounter.json:", e.message);
+    }
+
+    const sequenceStr = String(nextSeq).padStart(3, "0");
+    const quotationId = `LMAR-${todayStr}-${sequenceStr}`;
+
+    console.log(`✅ Generated Quotation ID: ${quotationId} (Drive Max: ${maxDriveSeq}, Local Prev: ${localCounter})`);
+    return quotationId;
 }
 
 module.exports = {
