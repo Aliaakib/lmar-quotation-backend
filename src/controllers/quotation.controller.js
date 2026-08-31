@@ -398,7 +398,7 @@ async function receiveFormSubmission(req, res) {
                 calculation.panelCount,
 
             SYSTEM_SIZE:
-                calculation.systemSize.toFixed(2),
+                String(calculation.systemSize),
 
             INVERTER: calculation.inverter,
 
@@ -596,7 +596,7 @@ async function receiveFormSubmission(req, res) {
                     quotationDate,
 
                 SYSTEM_SIZE:
-                    calculation.systemSize.toFixed(2),
+                    String(calculation.systemSize),
 
                 DISCOM:
                     data.discom || "",

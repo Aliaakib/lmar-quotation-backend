@@ -188,7 +188,7 @@ function generateCustomerQuotationHTML(data, calculation) {
                 totalWatt,
 
             "{{SYSTEM_SIZE}}":
-                systemSize.toFixed(2),
+                String(systemSize),
 
             "{{STRUCTURE_TYPE}}":
                 structureType,
