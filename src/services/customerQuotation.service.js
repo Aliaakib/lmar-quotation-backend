@@ -166,6 +166,15 @@ function generateCustomerQuotationHTML(data, calculation) {
             "{{CUSTOMER_PINCODE}}":
                 customerPincode,
 
+            "{{QUOTATION_ID}}":
+                data.quotationId || calculation.quotationId || "",
+
+            "{{QUOTATION_DATE}}":
+                data.quotationDate || calculation.quotationDate || "",
+
+            "{{DATE}}":
+                data.quotationDate || calculation.quotationDate || "",
+
             "{{DISCOM}}":
                 discom,
 

@@ -595,6 +595,9 @@ async function receiveFormSubmission(req, res) {
                 QUOTATION_DATE:
                     quotationDate,
 
+                DATE:
+                    quotationDate,
+
                 SYSTEM_SIZE:
                     String(calculation.systemSize),
 
@@ -606,10 +609,16 @@ async function receiveFormSubmission(req, res) {
                     calculation.panelType ||
                     "",
 
+                PANEL_COUNT:
+                    calculation.panelCount,
+
                 RATE_PER_KW:
                     calculation.ratePerKW.toFixed(2),
 
                 TOTAL_COST:
+                    calculation.projectValue.toFixed(2),
+
+                PROJECT_VALUE:
                     calculation.projectValue.toFixed(2),
 
                 DISCOUNT_PERCENTAGE:
