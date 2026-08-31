@@ -87,7 +87,7 @@ async function receiveFormSubmission(req, res) {
             if (!str) return 0;
 
             // Ignore strings containing model/brand/wattage keywords
-            if (/(?:watt|wattage|wp|\bw\b|sunfive|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
+            if (/(?:watt|wattage|wp|\bw\b|sunfive|waree|sasa|pixon|rayzon|adani|vikram|canadian|jinko|longi|trina|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
                 return 0;
             }
 

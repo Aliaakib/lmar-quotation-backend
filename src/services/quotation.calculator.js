@@ -1,10 +1,92 @@
+function extractPanelWatt(data) {
+    if (!data) return 540;
+
+    // 1. Direct panelWatt property
+    if (data.panelWatt !== undefined && data.panelWatt !== null && String(data.panelWatt).trim() !== "") {
+        const parsed = Number(String(data.panelWatt).replace(/[^0-9.]/g, ""));
+        if (Number.isFinite(parsed) && parsed >= 100 && parsed <= 2000) {
+            return parsed;
+        }
+    }
+
+    // 2. Extract wattage from panelType and related fields
+    const candidateFields = [
+        data.panelType,
+        data["Panel Type"],
+        data["Solar Panel Type"],
+        data["Panel Brand"],
+        data["Panel Model"],
+        data["Panel Type - 1 Phase"],
+        data["Panel Type - 3 Phase"],
+        data.solarPanelType,
+        data.panelBrand,
+        data.panelModel
+    ];
+
+    for (const val of candidateFields) {
+        if (!val) continue;
+        const str = String(val).trim();
+
+        // Match pattern like "615W", "615 W", "602Wp", "545 Watt", "545watts"
+        const matchWithUnit = str.match(/(\d{3,4})\s*(?:w|wp|watt|watts)\b/i);
+        if (matchWithUnit) {
+            const parsed = Number(matchWithUnit[1]);
+            if (Number.isFinite(parsed) && parsed >= 100 && parsed <= 2000) {
+                return parsed;
+            }
+        }
+
+        // Match standalone 3-4 digit number (e.g. "SASA 615", "WAREE 580")
+        const matchNum = str.match(/\b(\d{3,4})\b/);
+        if (matchNum) {
+            const parsed = Number(matchNum[1]);
+            if (Number.isFinite(parsed) && parsed >= 300 && parsed <= 1000) {
+                return parsed;
+            }
+        }
+    }
+
+    // 3. Fallback to rawFormValues if present
+    if (data.rawFormValues && typeof data.rawFormValues === "object") {
+        for (const [key, val] of Object.entries(data.rawFormValues)) {
+            const normKey = key.toLowerCase();
+            if (
+                normKey.includes("panel") ||
+                normKey.includes("watt") ||
+                normKey.includes("type") ||
+                normKey.includes("brand") ||
+                normKey.includes("model")
+            ) {
+                const text = Array.isArray(val) ? val.join(" ") : String(val);
+                const matchWithUnit = text.match(/(\d{3,4})\s*(?:w|wp|watt|watts)\b/i);
+                if (matchWithUnit) {
+                    const parsed = Number(matchWithUnit[1]);
+                    if (Number.isFinite(parsed) && parsed >= 100 && parsed <= 2000) {
+                        return parsed;
+                    }
+                }
+                const matchNum = text.match(/\b(\d{3,4})\b/);
+                if (matchNum) {
+                    const parsed = Number(matchNum[1]);
+                    if (Number.isFinite(parsed) && parsed >= 300 && parsed <= 1000) {
+                        return parsed;
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Default fallback: 540W
+    return 540;
+}
+
 function calculateQuotation(data) {
 
     // ==========================================
     // 1. PANEL / SYSTEM DETAILS
     // ==========================================
 
-    const panelWatt = 540;
+    const panelWatt = extractPanelWatt(data);
 
     let panelCount = 0;
 
@@ -62,7 +144,7 @@ function calculateQuotation(data) {
         const str = String(value).trim();
 
         // Ignore strings containing model/brand/wattage keywords
-        if (/(?:watt|wattage|wp|\bw\b|sunfive|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
+        if (/(?:watt|wattage|wp|\bw\b|sunfive|waree|sasa|pixon|rayzon|adani|vikram|canadian|jinko|longi|trina|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
             return 0;
         }
 
@@ -201,7 +283,15 @@ function calculateQuotation(data) {
         panelWatt * panelCount;
 
     const systemSize =
-        totalWatt / 1000;
+        Number((totalWatt / 1000).toFixed(3));
+
+    console.log("=================================");
+    console.log("SYSTEM CAPACITY DEBUG");
+    console.log("Panel Watt:", panelWatt, "W");
+    console.log("Panel Count:", panelCount);
+    console.log("Total Watt:", totalWatt, "W");
+    console.log("System Size (kW):", systemSize);
+    console.log("=================================");
 
 
     // ==========================================
