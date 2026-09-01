@@ -87,7 +87,7 @@ async function receiveFormSubmission(req, res) {
             if (!str) return 0;
 
             // Ignore strings containing model/brand/wattage keywords
-            if (/(?:watt|wattage|wp|\bw\b|sunfive|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
+            if (/(?:watt|wattage|wp|\bw\b|sunfive|waree|sasa|pixon|rayzon|adani|vikram|canadian|jinko|longi|trina|mono|perc|topcon|bifacial|brand|model|type|make|spec)/i.test(str)) {
                 return 0;
             }
 
@@ -398,7 +398,7 @@ async function receiveFormSubmission(req, res) {
                 calculation.panelCount,
 
             SYSTEM_SIZE:
-                calculation.systemSize.toFixed(2),
+                String(calculation.systemSize),
 
             INVERTER: calculation.inverter,
 
@@ -595,8 +595,11 @@ async function receiveFormSubmission(req, res) {
                 QUOTATION_DATE:
                     quotationDate,
 
+                DATE:
+                    quotationDate,
+
                 SYSTEM_SIZE:
-                    calculation.systemSize.toFixed(2),
+                    String(calculation.systemSize),
 
                 DISCOM:
                     data.discom || "",
@@ -606,10 +609,16 @@ async function receiveFormSubmission(req, res) {
                     calculation.panelType ||
                     "",
 
+                PANEL_COUNT:
+                    calculation.panelCount,
+
                 RATE_PER_KW:
                     calculation.ratePerKW.toFixed(2),
 
                 TOTAL_COST:
+                    calculation.projectValue.toFixed(2),
+
+                PROJECT_VALUE:
                     calculation.projectValue.toFixed(2),
 
                 DISCOUNT_PERCENTAGE:

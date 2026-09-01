@@ -76,8 +76,7 @@ function generateQuotationEmailHTML(data, calculation, quotation) {
         data.quotationDate || "N/A";
 
     const systemSize =
-        Number(calculation.systemSize || 0)
-            .toFixed(2);
+        calculation.systemSize || 0;
 
     const panelCount =
         calculation.panelCount || 0;
