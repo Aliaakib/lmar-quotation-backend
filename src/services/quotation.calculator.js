@@ -523,16 +523,45 @@ function calculateQuotation(data) {
     console.log("Normalized subsidyType:", subsidyType);
     console.log("Calculated subsidyAmount:", subsidyAmount);
     // ==========================================
-    // 12. CUSTOMER PAYABLE
+    // 12. METER VOLTAGE DETAILS
+    // ==========================================
+
+    const meterType = String(
+        data["Meter Type (NAME)"] || 
+        data.meterType || 
+        ""
+    ).trim();
+
+    const increaseInVoltage = String(
+        data["Increase in Voltage"] || 
+        data.increaseInVoltage || 
+        ""
+    ).trim();
+
+    const rawMeterVoltageAmount = 
+        data["Meter Voltage Amount (Rupees)"] || 
+        data.meterVoltageAmount || 
+        0;
+
+    const meterVoltageAmount = Number(
+        String(rawMeterVoltageAmount)
+            .replace(/₹/g, "")
+            .replace(/,/g, "")
+            .trim()
+    ) || 0;
+
+    // ==========================================
+    // 13. CUSTOMER PAYABLE
     // ==========================================
 
     const customerPayable =
         finalAmount -
-        subsidyAmount;
+        subsidyAmount + 
+        meterVoltageAmount;
 
 
     // ==========================================
-    // 13. DEALER COMMISSION
+    // 14. DEALER COMMISSION
     // ==========================================
 
     const fixedDealerMargin =
@@ -549,7 +578,7 @@ function calculateQuotation(data) {
 
 
     // ==========================================
-    // 14. RESULT
+    // 15. RESULT
     // ==========================================
 
     return {
@@ -579,6 +608,11 @@ function calculateQuotation(data) {
 
         subsidyType,
         subsidyAmount,
+        
+        meterType,
+        increaseInVoltage,
+        meterVoltageAmount,
+
         customerPayable,
 
         fixedDealerMargin,

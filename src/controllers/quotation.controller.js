@@ -432,6 +432,15 @@ async function receiveFormSubmission(req, res) {
             SUBSIDY_AMOUNT:
                 calculation.subsidyAmount.toFixed(2),
 
+            METER_TYPE:
+                calculation.meterType || "",
+
+            INCREASE_IN_VOLTAGE:
+                calculation.increaseInVoltage || "",
+
+            METER_VOLTAGE_AMOUNT:
+                calculation.meterVoltageAmount.toFixed(2),
+
             CUSTOMER_PAYABLE:
                 calculation.customerPayable.toFixed(2),
             FIXED_DEALER_MARGIN_PER_KW:
@@ -641,6 +650,9 @@ async function receiveFormSubmission(req, res) {
 
                 SUBSIDY_AMOUNT:
                     calculation.subsidyAmount.toFixed(2),
+                
+                METER_VOLTAGE_AMOUNT:
+                    calculation.meterVoltageAmount.toFixed(2),
 
                 CUSTOMER_PAYABLE:
                     calculation.customerPayable.toFixed(2)
